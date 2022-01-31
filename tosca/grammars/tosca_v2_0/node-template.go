@@ -34,8 +34,6 @@ type NodeTemplate struct {
 
 	CopyNodeTemplate *NodeTemplate `lookup:"copy,CopyNodeTemplateName" json:"-" yaml:"-"`
 	NodeType         *NodeType     `lookup:"type,NodeTypeName" json:"-" yaml:"-"`
-
-	rendered bool
 }
 
 func NewNodeTemplate(context *tosca.Context) *NodeTemplate {
@@ -67,18 +65,21 @@ func (self *NodeTemplate) PreRead() {
 }
 
 // parser.Renderable interface
+// Avoid rendering more than once (can happen if we were called from PropertyMapping etc. Render)
 func (self *NodeTemplate) Render() {
-	logRender.Debugf("node template: %s", self.Name)
+	self.renderOnce.Do(self.render)
+}
 
-	if self.rendered {
-		// Avoid rendering more than once (can happen if we were called from PropertyMapping etc. Render)
-		return
-	}
-	self.rendered = true
+func (self *NodeTemplate) render() {
+	logRender.Debugf("node template: %s", self.Name)
 
 	if self.NodeType == nil {
 		return
 	}
+
+	lock := self.NodeType.GetEntityLock()
+	lock.Lock()
+	defer lock.Unlock()
 
 	self.Properties.RenderProperties(self.NodeType.PropertyDefinitions, "property", self.Context.FieldChild("properties", nil))
 	self.Attributes.RenderAttributes(self.NodeType.AttributeDefinitions, self.Context.FieldChild("attributes", nil))
@@ -124,14 +125,20 @@ type NodeTemplates []*NodeTemplate
 
 func (self NodeTemplates) Normalize(normalServiceTemplate *normal.ServiceTemplate) {
 	for _, nodeTemplate := range self {
+		lock := nodeTemplate.GetEntityLock()
+		lock.RLock()
 		normalServiceTemplate.NodeTemplates[nodeTemplate.Name] = nodeTemplate.Normalize(normalServiceTemplate)
+		lock.RUnlock()
 	}
 
 	// Requirements must be normalized after node templates
 	// (because they may reference other node templates)
 	for _, nodeTemplate := range self {
 		if normalNodeTemplate, ok := normalServiceTemplate.NodeTemplates[nodeTemplate.Name]; ok {
+			lock := nodeTemplate.GetEntityLock()
+			lock.RLock()
 			nodeTemplate.Requirements.Normalize(nodeTemplate, normalNodeTemplate)
+			lock.RUnlock()
 		}
 	}
 }

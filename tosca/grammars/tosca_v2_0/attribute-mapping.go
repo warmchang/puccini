@@ -61,16 +61,20 @@ func (self *AttributeMapping) EnsureRender() {
 	var nodeTemplateType *NodeTemplate
 	if nodeTemplate, ok := self.Context.Namespace.LookupForType(nodeTemplateName, reflect.TypeOf(nodeTemplateType)); ok {
 		self.NodeTemplate = nodeTemplate.(*NodeTemplate)
+
+		lock := self.NodeTemplate.GetEntityLock()
+		lock.Lock()
+		defer lock.Unlock()
+
 		self.NodeTemplate.Render()
+
+		name := *self.AttributeName
+		var ok bool
+		if self.Attribute, ok = self.NodeTemplate.Attributes[name]; !ok {
+			self.Context.ListChild(1, name).ReportReferenceNotFound("attribute", self.NodeTemplate)
+		}
 	} else {
 		self.Context.ListChild(0, nodeTemplateName).ReportUnknown("node template")
-		return
-	}
-
-	name := *self.AttributeName
-	var ok bool
-	if self.Attribute, ok = self.NodeTemplate.Attributes[name]; !ok {
-		self.Context.ListChild(1, name).ReportReferenceNotFound("attribute", self.NodeTemplate)
 	}
 }
 
@@ -82,6 +86,9 @@ type AttributeMappings map[string]*AttributeMapping
 
 func (self AttributeMappings) EnsureRender() {
 	for _, mapping := range self {
+		lock := mapping.GetEntityLock()
+		lock.Lock()
 		mapping.EnsureRender()
+		lock.Unlock()
 	}
 }

@@ -26,7 +26,7 @@ type DataType struct {
 	*Type `name:"data type"`
 
 	PropertyDefinitions PropertyDefinitions `read:"properties,PropertyDefinition" inherit:"properties,Parent"`
-	ConstraintClauses   ConstraintClauses   `read:"constraints,[]ConstraintClause"`
+	ConstraintClauses   ConstraintClauses   `read:"constraints,[]ConstraintClause" traverse:"ignore"`
 	KeySchema           *Schema             `read:"key_schema,Schema"`   // introduced in TOSCA 1.3
 	EntrySchema         *Schema             `read:"entry_schema,Schema"` // introduced in TOSCA 1.3
 
@@ -54,6 +54,10 @@ func (self *DataType) GetParent() tosca.EntityPtr {
 
 // tosca.Inherits interface
 func (self *DataType) Inherit() {
+	self.inheritOnce.Do(self.inherit)
+}
+
+func (self *DataType) inherit() {
 	logInherit.Debugf("data type: %s", self.Name)
 
 	if _, ok := self.GetInternalTypeName(); ok && (len(self.PropertyDefinitions) > 0) {
@@ -66,6 +70,10 @@ func (self *DataType) Inherit() {
 	if self.Parent == nil {
 		return
 	}
+
+	lock := self.Parent.GetEntityLock()
+	lock.RLock()
+	defer lock.RUnlock()
 
 	if (self.KeySchema == nil) && (self.Parent.KeySchema != nil) {
 		self.KeySchema = self.Parent.KeySchema
@@ -82,6 +90,10 @@ func (self *DataType) Inherit() {
 
 // parser.Renderable interface
 func (self *DataType) Render() {
+	self.renderOnce.Do(self.render)
+}
+
+func (self *DataType) render() {
 	logRender.Debugf("data type: %s", self.Name)
 
 	self.ConstraintClauses.Render(self)
@@ -99,6 +111,10 @@ func (self *DataType) GetInternalTypeName() (ard.TypeName, bool) {
 	if typeName, ok := self.GetMetadataValue("puccini.type"); ok {
 		return ard.TypeName(typeName), ok
 	} else if self.Parent != nil {
+		lock := self.Parent.GetEntityLock()
+		lock.RLock()
+		defer lock.RUnlock()
+
 		// The internal type metadata is inherited
 		return self.Parent.GetInternalTypeName()
 	} else {

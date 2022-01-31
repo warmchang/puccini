@@ -67,6 +67,9 @@ type PropertyFilters []*PropertyFilter
 
 func (self PropertyFilters) Normalize(normalFunctionCallMap normal.FunctionCallMap) {
 	for _, propertyFilter := range self {
+		lock := propertyFilter.GetEntityLock()
+		lock.RLock()
 		propertyFilter.Normalize(normalFunctionCallMap)
+		lock.RUnlock()
 	}
 }

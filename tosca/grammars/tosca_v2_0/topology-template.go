@@ -62,7 +62,13 @@ func (self *TopologyTemplate) SetInputs(inputs map[string]ard.Value) {
 	for name, data := range inputs {
 		childContext := context.MapChild(name, data)
 		if definition, ok := self.InputDefinitions[name]; ok {
+			lock1 := definition.GetEntityLock()
+			lock1.RLock()
+			defer lock1.RUnlock()
 			if definition.DataType != nil {
+				lock2 := definition.DataType.GetEntityLock()
+				lock2.RLock()
+				defer lock2.RUnlock()
 				if internalTypeName, ok := definition.DataType.GetInternalTypeName(); ok {
 					if internalTypeName == ard.TypeInteger {
 						// In JSON, everything is a float
@@ -87,19 +93,33 @@ func (self *TopologyTemplate) SetInputs(inputs map[string]ard.Value) {
 
 // parser.Renderable interface
 func (self *TopologyTemplate) Render() {
+	self.renderOnce.Do(self.render)
+}
+
+func (self *TopologyTemplate) render() {
 	logRender.Debug("topology template")
 
 	var mappedInputs []string
 
 	if self.SubstitutionMappings != nil {
+		lock1 := self.SubstitutionMappings.GetEntityLock()
+		lock1.Lock()
+		defer lock1.Unlock()
+
 		// Substitution mapping rendering has to happen before input rendering
 		// in order to avoid rendering of mapped inputs
 		self.SubstitutionMappings.Render(self.InputDefinitions)
 
 		for _, mapping := range self.SubstitutionMappings.PropertyMappings {
+			lock2 := mapping.GetEntityLock()
+			lock2.RLock()
 			if mapping.InputDefinition != nil {
+				lock3 := mapping.InputDefinition.GetEntityLock()
+				lock3.RLock()
 				mappedInputs = append(mappedInputs, mapping.InputDefinition.Name)
+				lock3.RUnlock()
 			}
+			lock2.RUnlock()
 		}
 	}
 

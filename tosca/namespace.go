@@ -5,10 +5,10 @@ import (
 	"reflect"
 	"sort"
 	"strings"
-	"sync"
 
 	"github.com/tliron/kutil/reflection"
 	"github.com/tliron/kutil/terminal"
+	"github.com/tliron/kutil/util"
 )
 
 type NameTransformer = func(string, EntityPtr) []string
@@ -19,12 +19,13 @@ type NameTransformer = func(string, EntityPtr) []string
 
 type Namespace struct {
 	namespace map[reflect.Type]map[string]EntityPtr
-	lock      sync.RWMutex
+	lock      util.RWLocker
 }
 
 func NewNamespace() *Namespace {
 	return &Namespace{
 		namespace: make(map[reflect.Type]map[string]EntityPtr),
+		lock:      util.NewDebugRWLocker(),
 	}
 }
 
@@ -32,7 +33,7 @@ func NewNamespace() *Namespace {
 func NewNamespaceFor(entityPtr EntityPtr) *Namespace {
 	self := NewNamespace()
 
-	reflection.Traverse(entityPtr, func(entityPtr EntityPtr) bool {
+	reflection.TraverseEntities(entityPtr, func(entityPtr EntityPtr) bool {
 		for _, field := range reflection.GetTaggedFields(entityPtr, "namespace") {
 			if field.Kind() != reflect.String {
 				panic(fmt.Sprintf("\"namespace\" tag can only be used on \"string\" field in struct: %T", entityPtr))
@@ -66,15 +67,19 @@ func (self *Namespace) Empty() bool {
 	return len(self.namespace) == 0
 }
 
-func (self *Namespace) Range(f func(EntityPtr, EntityPtr) bool) {
+func (self *Namespace) Range(f func(EntityPtr) bool) {
+	var entityPtrs EntityPtrs
 	self.lock.RLock()
-	defer self.lock.RUnlock()
-
 	for _, forType := range self.namespace {
 		for _, entityPtr := range forType {
-			if !f(forType, entityPtr) {
-				return
-			}
+			entityPtrs = append(entityPtrs, entityPtr)
+		}
+	}
+	self.lock.RUnlock()
+
+	for _, entityPtr := range entityPtrs {
+		if !f(entityPtr) {
+			return
 		}
 	}
 }
@@ -117,27 +122,36 @@ func (self *Namespace) Merge(namespace *Namespace, nameTransformer NameTransform
 		return
 	}
 
-	self.lock.Lock()
-	defer self.lock.Unlock()
+	type entry struct {
+		type_     reflect.Type
+		name      string
+		entityPtr EntityPtr
+	}
 
+	var entries []entry
 	namespace.lock.RLock()
-	defer namespace.lock.RUnlock()
-
 	for type_, forType := range namespace.namespace {
 		for name, entityPtr := range forType {
-			var names []string
+			entries = append(entries, entry{type_, name, entityPtr})
+		}
+	}
+	namespace.lock.RUnlock()
 
-			if nameTransformer != nil {
-				names = append(names, nameTransformer(name, entityPtr)...)
-			} else {
-				names = []string{name}
-			}
+	for _, entry := range entries {
+		var names []string
 
-			for _, name = range names {
-				if existing, exists := self.set(name, entityPtr); exists {
-					GetContext(entityPtr).ReportNameAmbiguous(type_.Elem(), name, entityPtr, existing)
-				}
+		if nameTransformer != nil {
+			names = append(names, nameTransformer(entry.name, entry.entityPtr)...)
+		} else {
+			names = []string{entry.name}
+		}
+
+		for _, name := range names {
+			self.lock.Lock()
+			if existing, exists := self.set(name, entry.entityPtr); exists {
+				GetContext(entry.entityPtr).ReportNameAmbiguous(entry.type_.Elem(), name, entry.entityPtr, existing)
 			}
+			self.lock.Unlock()
 		}
 	}
 }

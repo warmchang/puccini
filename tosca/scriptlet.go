@@ -3,9 +3,9 @@ package tosca
 import (
 	"strconv"
 	"strings"
-	"sync"
 
 	urlpkg "github.com/tliron/kutil/url"
+	"github.com/tliron/kutil/util"
 	"github.com/tliron/puccini/clout/js"
 )
 
@@ -87,20 +87,25 @@ func (self *Scriptlet) Read() (string, error) {
 
 type ScriptletNamespace struct {
 	namespace map[string]*Scriptlet
-	lock      sync.RWMutex
+	lock      util.RWLocker
 }
 
 func NewScriptletNamespace() *ScriptletNamespace {
 	return &ScriptletNamespace{
 		namespace: make(map[string]*Scriptlet),
+		lock:      util.NewDebugRWLocker(),
 	}
 }
 
 func (self *ScriptletNamespace) Range(f func(string, *Scriptlet) bool) {
+	namespace := make(map[string]*Scriptlet)
 	self.lock.RLock()
-	defer self.lock.RUnlock()
-
 	for name, scriptlet := range self.namespace {
+		namespace[name] = scriptlet
+	}
+	self.lock.RUnlock()
+
+	for name, scriptlet := range namespace {
 		if !f(name, scriptlet) {
 			return
 		}

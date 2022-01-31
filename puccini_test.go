@@ -6,7 +6,9 @@ import (
 	"testing"
 
 	problemspkg "github.com/tliron/kutil/problems"
+	"github.com/tliron/kutil/terminal"
 	urlpkg "github.com/tliron/kutil/url"
+	"github.com/tliron/kutil/util"
 	cloutpkg "github.com/tliron/puccini/clout"
 	"github.com/tliron/puccini/tosca/compiler"
 	"github.com/tliron/puccini/tosca/normal"
@@ -16,6 +18,8 @@ import (
 )
 
 func TestParse(t *testing.T) {
+	terminal.Stdout = util.NewTestLogWriter(t)
+
 	testCompile(t, "tosca/artifacts.yaml", nil)
 	testCompile(t, "tosca/attributes.yaml", nil)
 	testCompile(t, "tosca/copy.yaml", nil)
@@ -47,7 +51,7 @@ func TestParse(t *testing.T) {
 	testCompile(t, "javascript/functions.yaml", nil)
 	testCompile(t, "openstack/hello-world.yaml", nil)
 	testCompile(t, "bpmn/open-loop.yaml", nil)
-	testCompile(t, "cloudify/advanced-blueprint-example.yaml", map[string]interface{}{
+	/*testCompile(t, "cloudify/advanced-blueprint-example.yaml", map[string]interface{}{
 		"host_ip":                "1.2.3.4",
 		"agent_user":             "my_user",
 		"agent_private_key_path": "my_key",
@@ -55,7 +59,7 @@ func TestParse(t *testing.T) {
 	testCompile(t, "cloudify/example.yaml", nil)
 	testCompile(t, "hot/hello-world.yaml", map[string]interface{}{
 		"username": "test",
-	})
+	})*/
 }
 
 var ROOT string

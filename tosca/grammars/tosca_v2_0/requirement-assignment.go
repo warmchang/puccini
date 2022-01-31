@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/tliron/kutil/ard"
+	"github.com/tliron/kutil/util"
 	"github.com/tliron/puccini/tosca"
 	"github.com/tliron/puccini/tosca/normal"
 )
@@ -78,35 +79,64 @@ func (self *RequirementAssignment) Normalize(nodeTemplate *NodeTemplate, normalN
 	normalRequirement := normalNodeTemplate.NewRequirement(self.Name, normal.NewLocationForContext(self.Context))
 
 	if self.TargetCapabilityType != nil {
+		lock := self.TargetCapabilityType.GetEntityLock()
+		lock.RLock()
 		name := tosca.GetCanonicalName(self.TargetCapabilityType)
+		lock.RUnlock()
 		normalRequirement.CapabilityTypeName = &name
 	} else if self.TargetCapabilityNameOrTypeName != nil {
 		normalRequirement.CapabilityName = self.TargetCapabilityNameOrTypeName
 	}
 
 	if self.TargetNodeTemplate != nil {
+		lock := self.TargetNodeTemplate.GetEntityLock()
+		lock.RLock()
 		normalRequirement.NodeTemplate, _ = normalNodeTemplate.ServiceTemplate.NodeTemplates[self.TargetNodeTemplate.Name]
+		lock.RUnlock()
 	}
 
 	if self.TargetNodeType != nil {
+		lock := self.TargetNodeType.GetEntityLock()
+		lock.RLock()
 		name := tosca.GetCanonicalName(self.TargetNodeType)
+		lock.RUnlock()
 		normalRequirement.NodeTypeName = &name
 	}
 
 	if nodeTemplate.RequirementTargetsNodeFilter != nil {
+		lock := nodeTemplate.RequirementTargetsNodeFilter.GetEntityLock()
+		lock.RLock()
 		nodeTemplate.RequirementTargetsNodeFilter.Normalize(normalRequirement)
+		lock.RUnlock()
 	}
 
 	if self.TargetNodeFilter != nil {
+		lock := self.TargetNodeFilter.GetEntityLock()
+		lock.RLock()
 		self.TargetNodeFilter.Normalize(normalRequirement)
+		lock.RUnlock()
 	}
 
 	if self.Relationship != nil {
+		lock1 := self.Relationship.GetEntityLock()
+		lock1.RLock()
 		if definition, ok := self.GetDefinition(nodeTemplate); ok {
+			lock2 := definition.GetEntityLock()
+			lock2.RLock()
+			var lock3 util.RWLocker
+			if definition.RelationshipDefinition != nil {
+				lock3 = definition.RelationshipDefinition.GetEntityLock()
+				lock3.RLock()
+			}
 			self.Relationship.Normalize(definition.RelationshipDefinition, normalRequirement.NewRelationship())
+			if lock3 != nil {
+				lock3.RUnlock()
+			}
+			lock2.RUnlock()
 		} else {
 			self.Relationship.Normalize(nil, normalRequirement.NewRelationship())
 		}
+		lock1.RUnlock()
 	}
 
 	return normalRequirement
@@ -123,17 +153,21 @@ func (self *RequirementAssignments) Render(definitions RequirementDefinitions, c
 	// assignment, because we interpret "occurrences" in the definition to mean how many times
 	// it would be assigned
 
-	for key, definition := range definitions {
+	for _, definition := range definitions {
+		lock := definition.GetEntityLock()
+		lock.RLock()
+
 		// The TOSCA spec says that definition occurrences has an "implied default of [1,1]"
 		occurrences := definition.Occurrences
 		if occurrences == nil {
-			occurrences = ReadRangeEntity(definition.Context.FieldChild("occurrences", ard.List{1, 1})).(*RangeEntity)
+			occurrencesContext := definition.Context.FieldChild("occurrences", ard.List{1, 1})
+			occurrences = ReadRangeEntity(occurrencesContext).(*RangeEntity)
 		}
 
-		count := self.Count(key)
+		count := self.Count(definition.Name)
 
 		// Automatically add missing assignments
-		for i := count; i < occurrences.Range.Lower; i++ {
+		for index := count; index < occurrences.Range.Lower; index++ {
 			*self = append(*self, NewDefaultRequirementAssignment(len(*self), definition, context))
 			count++
 		}
@@ -141,10 +175,18 @@ func (self *RequirementAssignments) Render(definitions RequirementDefinitions, c
 		if !occurrences.Range.InRange(count) {
 			context.ReportNotInRange(fmt.Sprintf("number of requirement %q assignments", definition.Name), count, occurrences.Range.Lower, occurrences.Range.Upper)
 		}
+
+		lock.RUnlock()
 	}
 
 	for _, assignment := range *self {
+		lock1 := assignment.GetEntityLock()
+		lock1.Lock()
+
 		if definition, ok := definitions[assignment.Name]; ok {
+			lock2 := definition.GetEntityLock()
+			lock2.RLock()
+
 			if assignment.TargetCapabilityNameOrTypeName == nil {
 				assignment.TargetCapabilityNameOrTypeName = definition.TargetCapabilityTypeName
 			}
@@ -162,9 +204,15 @@ func (self *RequirementAssignments) Render(definitions RequirementDefinitions, c
 			}
 
 			if definition.RelationshipDefinition != nil {
+				lock3 := definition.RelationshipDefinition.GetEntityLock()
+				lock3.RLock()
+
 				if assignment.Relationship == nil {
 					assignment.Relationship = definition.RelationshipDefinition.NewDefaultAssignment(assignment.Context.FieldChild("relationship", nil))
 				}
+
+				lock4 := assignment.Relationship.GetEntityLock()
+				lock4.Lock()
 
 				if assignment.Relationship.RelationshipTemplateNameOrTypeName == nil {
 					// Note: the definition can only specify a relationship type, not a relationship template
@@ -175,27 +223,35 @@ func (self *RequirementAssignments) Render(definitions RequirementDefinitions, c
 					// Note: we are careful not set the relationship type if the assignment uses a relationship template
 					assignment.Relationship.RelationshipType = definition.RelationshipDefinition.RelationshipType
 				}
+
+				assignment.Relationship.Render(definition.RelationshipDefinition)
+
+				lock4.Unlock()
+				lock3.RUnlock()
 			}
 
-			if assignment.Relationship != nil {
-				assignment.Relationship.Render(definition.RelationshipDefinition)
-			}
+			lock2.RUnlock()
 		} else {
 			assignment.Context.ReportUndeclared("requirement")
 		}
+
+		lock1.Unlock()
 	}
 }
 
 func (self RequirementAssignments) Normalize(nodeTemplate *NodeTemplate, normalNodeTemplate *normal.NodeTemplate) {
 	for _, requirement := range self {
+		lock := requirement.GetEntityLock()
+		lock.RLock()
 		requirement.Normalize(nodeTemplate, normalNodeTemplate)
+		lock.RUnlock()
 	}
 }
 
-func (self *RequirementAssignments) Count(key string) uint64 {
+func (self *RequirementAssignments) Count(name string) uint64 {
 	var count uint64
 	for _, assignment := range *self {
-		if assignment.Name == key {
+		if assignment.Name == name {
 			count++
 		}
 	}

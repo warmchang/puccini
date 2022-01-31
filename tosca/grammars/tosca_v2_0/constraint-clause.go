@@ -49,7 +49,7 @@ type ConstraintClause struct {
 	Operator              string
 	Arguments             ard.List
 	NativeArgumentIndexes []uint
-	DataType              *DataType `traverse:"ignore" json:"-" yaml:"-"`
+	DataType              *DataType `traverse:"ignore" json:"-" yaml:"-"` // TODO: unncessary, this entity should never be traversed
 }
 
 func NewConstraintClause(context *tosca.Context) *ConstraintClause {
@@ -110,13 +110,23 @@ func (self *ConstraintClause) ToFunctionCall(context *tosca.Context, strict bool
 		}
 	}
 
+	arguments_ := make([]interface{}, len(self.Arguments))
+	copy(arguments_, self.Arguments)
+
+	// To avoid lock reordering
+	lock1 := self.GetEntityLock()
+	lock1.RUnlock()
+
 	arguments := make([]interface{}, len(self.Arguments))
-	for index, argument := range self.Arguments {
+	for index, argument := range arguments_ {
 		if self.IsNativeArgument(uint(index)) {
 			if _, ok := argument.(*Value); !ok {
 				if self.DataType != nil {
 					value := ReadValue(context.ListChild(index, argument)).(*Value)
+					lock2 := self.DataType.GetEntityLock()
+					lock2.RLock()
 					value.RenderAttribute(self.DataType, nil, true, false) // bare
+					lock2.RUnlock()
 					argument = value
 				} else if strict {
 					panic("no data type for native argument")
@@ -126,6 +136,8 @@ func (self *ConstraintClause) ToFunctionCall(context *tosca.Context, strict bool
 
 		arguments[index] = argument
 	}
+
+	lock1.RLock()
 
 	return context.NewFunctionCall("tosca.constraint."+self.Operator, arguments)
 }
@@ -160,7 +172,10 @@ func (self ConstraintClauses) Append(constraints ConstraintClauses) ConstraintCl
 
 func (self ConstraintClauses) Render(dataType *DataType) {
 	for _, constraint := range self {
+		lock := constraint.GetEntityLock()
+		lock.Lock()
 		constraint.DataType = dataType
+		lock.Unlock()
 	}
 }
 
@@ -177,7 +192,10 @@ func (self ConstraintClauses) Validate(dataType *DataType) {
 func (self ConstraintClauses) Normalize(context *tosca.Context) normal.FunctionCalls {
 	var normalFunctionCalls normal.FunctionCalls
 	for _, constraintClause := range self {
+		lock := constraintClause.GetEntityLock()
+		lock.RLock()
 		functionCall := constraintClause.ToFunctionCall(context, false)
+		lock.RUnlock()
 		NormalizeFunctionCallArguments(functionCall, context)
 		normalFunctionCalls = append(normalFunctionCalls, normal.NewFunctionCall(functionCall))
 	}
@@ -186,7 +204,10 @@ func (self ConstraintClauses) Normalize(context *tosca.Context) normal.FunctionC
 
 func (self ConstraintClauses) NormalizeConstrainable(context *tosca.Context, normalConstrainable normal.Constrainable) {
 	for _, constraintClause := range self {
+		lock := constraintClause.GetEntityLock()
+		lock.RLock()
 		functionCall := constraintClause.ToFunctionCall(context, true)
+		lock.RUnlock()
 		NormalizeFunctionCallArguments(functionCall, context)
 		normalConstrainable.AddConstraint(functionCall)
 	}
@@ -194,7 +215,10 @@ func (self ConstraintClauses) NormalizeConstrainable(context *tosca.Context, nor
 
 func (self ConstraintClauses) NormalizeListEntries(context *tosca.Context, normalList *normal.List) {
 	for _, constraintClause := range self {
+		lock := constraintClause.GetEntityLock()
+		lock.RLock()
 		functionCall := constraintClause.ToFunctionCall(context, true)
+		lock.RUnlock()
 		NormalizeFunctionCallArguments(functionCall, context)
 		normalList.AddEntryConstraint(functionCall)
 	}
@@ -202,7 +226,10 @@ func (self ConstraintClauses) NormalizeListEntries(context *tosca.Context, norma
 
 func (self ConstraintClauses) NormalizeMapKeys(context *tosca.Context, normalMap *normal.Map) {
 	for _, constraintClause := range self {
+		lock := constraintClause.GetEntityLock()
+		lock.RLock()
 		functionCall := constraintClause.ToFunctionCall(context, true)
+		lock.RUnlock()
 		NormalizeFunctionCallArguments(functionCall, context)
 		normalMap.AddKeyConstraint(functionCall)
 	}
@@ -210,7 +237,10 @@ func (self ConstraintClauses) NormalizeMapKeys(context *tosca.Context, normalMap
 
 func (self ConstraintClauses) NormalizeMapValues(context *tosca.Context, normalMap *normal.Map) {
 	for _, constraintClause := range self {
+		lock := constraintClause.GetEntityLock()
+		lock.RLock()
 		functionCall := constraintClause.ToFunctionCall(context, true)
+		lock.RUnlock()
 		NormalizeFunctionCallArguments(functionCall, context)
 		normalMap.AddValueConstraint(functionCall)
 	}

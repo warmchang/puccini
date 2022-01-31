@@ -83,12 +83,25 @@ func (self *RelationshipAssignment) Render(definition *RelationshipDefinition) {
 	}
 
 	if self.RelationshipTemplate != nil {
+		lock1 := self.RelationshipTemplate.GetEntityLock()
+		lock1.Lock()
+		defer lock1.Unlock()
+
 		self.RelationshipTemplate.Render()
 		self.Properties.CopyUnassigned(self.RelationshipTemplate.Properties)
 		self.Attributes.CopyUnassigned(self.RelationshipTemplate.Attributes)
 		self.Interfaces.CopyUnassigned(self.RelationshipTemplate.Interfaces)
+
+		lock2 := self.RelationshipTemplate.RelationshipType.GetEntityLock()
+		lock2.RLock()
+		defer lock2.RUnlock()
+
 		self.Interfaces.RenderForRelationship(self, self.RelationshipTemplate.RelationshipType.InterfaceDefinitions, self.Context.FieldChild("interfaces", nil))
 	} else {
+		lock := self.RelationshipType.GetEntityLock()
+		lock.RLock()
+		defer lock.RUnlock()
+
 		self.Properties.RenderProperties(self.RelationshipType.PropertyDefinitions, "property", self.Context.FieldChild("properties", nil))
 		self.Attributes.RenderAttributes(self.RelationshipType.AttributeDefinitions, self.Context.FieldChild("attributes", nil))
 		self.Interfaces.RenderForRelationship(self, self.RelationshipType.InterfaceDefinitions, self.Context.FieldChild("interfaces", nil))
@@ -97,7 +110,10 @@ func (self *RelationshipAssignment) Render(definition *RelationshipDefinition) {
 
 func (self *RelationshipAssignment) Normalize(definition *RelationshipDefinition, normalRelationship *normal.Relationship) {
 	if self.RelationshipTemplate != nil {
+		lock := self.RelationshipTemplate.GetEntityLock()
+		lock.RLock()
 		self.RelationshipTemplate.Normalize(normalRelationship)
+		lock.RUnlock()
 	}
 
 	relationshipType := self.GetType(definition)

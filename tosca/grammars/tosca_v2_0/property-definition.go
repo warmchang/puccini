@@ -1,6 +1,7 @@
 package tosca_v2_0
 
 import (
+	"github.com/tliron/kutil/util"
 	"github.com/tliron/puccini/tosca"
 )
 
@@ -18,7 +19,7 @@ type PropertyDefinition struct {
 	*AttributeDefinition `name:"property definition"`
 
 	Required          *bool             `read:"required"`
-	ConstraintClauses ConstraintClauses `read:"constraints,[]ConstraintClause"`
+	ConstraintClauses ConstraintClauses `read:"constraints,[]ConstraintClause" traverse:"ignore"`
 }
 
 func NewPropertyDefinition(context *tosca.Context) *PropertyDefinition {
@@ -51,14 +52,33 @@ func (self *PropertyDefinition) Inherit(parentDefinition *PropertyDefinition) {
 
 // parser.Renderable interface
 func (self *PropertyDefinition) Render() {
+	self.renderOnce.Do(self.render)
+}
+
+func (self *PropertyDefinition) render() {
 	logRender.Debugf("property definition: %s", self.Name)
 
-	self.render()
+	var lock1 util.RWLocker
+	if self.DataType != nil {
+		lock1 = self.DataType.GetEntityLock()
+		lock1.RLock()
+	}
+
+	self.doRender()
 	self.ConstraintClauses.Render(self.DataType)
+
+	if lock1 != nil {
+		lock1.RUnlock()
+	}
 
 	if (self.Default != nil) && (self.DataType != nil) {
 		// The "default" value must be a valid value of the type
+		lock2 := self.Default.GetEntityLock()
+		lock2.Lock()
+		lock1.RLock()
 		self.Default.RenderProperty(self.DataType, self)
+		lock1.RUnlock()
+		lock2.Unlock()
 	}
 }
 
@@ -83,7 +103,13 @@ func (self PropertyDefinitions) Inherit(parentDefinitions PropertyDefinitions) {
 	for name, definition := range self {
 		if parentDefinition, ok := parentDefinitions[name]; ok {
 			if definition != parentDefinition {
+				lock1 := definition.GetEntityLock()
+				lock1.Lock()
+				lock2 := parentDefinition.GetEntityLock()
+				lock2.RLock()
 				definition.Inherit(parentDefinition)
+				lock2.RUnlock()
+				lock1.Unlock()
 			}
 		}
 	}

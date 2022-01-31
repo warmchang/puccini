@@ -104,12 +104,18 @@ func (self OperationAssignments) CopyUnassigned(assignments OperationAssignments
 
 func (self OperationAssignments) Render(definitions OperationDefinitions, context *tosca.Context) {
 	for key, definition := range definitions {
+		lock1 := definition.GetEntityLock()
+		lock1.RLock()
+
 		assignment, ok := self[key]
 
 		if !ok {
 			assignment = NewOperationAssignment(context.FieldChild(key, nil))
 			self[key] = assignment
 		}
+
+		lock2 := assignment.GetEntityLock()
+		lock2.Lock()
 
 		if assignment.Description == nil {
 			assignment.Description = definition.Description
@@ -121,11 +127,17 @@ func (self OperationAssignments) Render(definitions OperationDefinitions, contex
 		}
 
 		if assignment.Implementation != nil {
+			lock3 := assignment.Implementation.GetEntityLock()
+			lock3.Lock()
 			assignment.Implementation.Render(definition.Implementation)
+			lock3.Unlock()
 		}
 
 		assignment.Inputs.RenderProperties(definition.InputDefinitions, "input", assignment.Context.FieldChild("inputs", nil))
 		assignment.Outputs.Inherit(definition.Outputs)
+
+		lock2.Unlock()
+		lock1.RUnlock()
 	}
 
 	for key, assignment := range self {
@@ -139,6 +151,9 @@ func (self OperationAssignments) Render(definitions OperationDefinitions, contex
 
 func (self OperationAssignments) Normalize(normalInterface *normal.Interface) {
 	for key, operation := range self {
+		lock := operation.GetEntityLock()
+		lock.RLock()
 		normalInterface.Operations[key] = operation.Normalize(normalInterface)
+		lock.RUnlock()
 	}
 }

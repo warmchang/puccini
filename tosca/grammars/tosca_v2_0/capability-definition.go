@@ -95,6 +95,10 @@ func (self *CapabilityDefinition) Inherit(parentDefinition *CapabilityDefinition
 
 // parser.Renderable interface
 func (self *CapabilityDefinition) Render() {
+	self.renderOnce.Do(self.render)
+}
+
+func (self *CapabilityDefinition) render() {
 	logRender.Debugf("capability definition: %s", self.Name)
 
 	if self.CapabilityTypeName == nil {
@@ -122,7 +126,13 @@ func (self CapabilityDefinitions) Inherit(parentDefinitions CapabilityDefinition
 	for name, definition := range self {
 		if parentDefinition, ok := parentDefinitions[name]; ok {
 			if definition != parentDefinition {
+				lock1 := definition.GetEntityLock()
+				lock1.Lock()
+				lock2 := parentDefinition.GetEntityLock()
+				lock2.RLock()
 				definition.Inherit(parentDefinition)
+				lock2.RUnlock()
+				lock1.Unlock()
 			}
 		}
 	}

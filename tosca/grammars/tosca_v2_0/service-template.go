@@ -56,7 +56,10 @@ func (self *ServiceTemplate) NormalizeServiceTemplate() *normal.ServiceTemplate 
 
 	self.Unit.Normalize(normalServiceTemplate)
 	if self.TopologyTemplate != nil {
+		lock := self.TopologyTemplate.GetEntityLock()
+		lock.RLock()
 		self.TopologyTemplate.Normalize(normalServiceTemplate)
+		lock.RUnlock()
 	}
 
 	return normalServiceTemplate

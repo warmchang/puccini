@@ -81,6 +81,10 @@ func (self *Artifact) DoRender() {
 		return
 	}
 
+	lock := self.ArtifactType.GetEntityLock()
+	lock.RLock()
+	defer lock.RUnlock()
+
 	// Validate extension (if "file_ext" was not set in type, then anything goes)
 	if self.ArtifactType.FileExtension != nil {
 		extension := self.GetExtension()
@@ -134,7 +138,13 @@ func (self *Artifact) Normalize(normalNodeTemplate *normal.NodeTemplate) *normal
 		normalArtifact.Checksum = *self.Checksum
 	}
 	if (self.Repository != nil) && (self.Repository.Credential != nil) {
+		lock1 := self.Repository.GetEntityLock()
+		lock1.RLock()
+		lock2 := self.Repository.Credential.GetEntityLock()
+		lock2.RLock()
 		normalArtifact.Credential = self.Repository.Credential.Normalize()
+		lock2.RUnlock()
+		lock1.RUnlock()
 	}
 
 	return normalArtifact
@@ -149,19 +159,31 @@ type Artifacts map[string]*Artifact
 func (self Artifacts) Render(definitions ArtifactDefinitions, context *tosca.Context) {
 	for key, definition := range definitions {
 		if artifact, ok := self[key]; ok {
+			lock1 := artifact.GetEntityLock()
+			lock1.Lock()
+			lock2 := definition.GetEntityLock()
+			lock2.RLock()
 			artifact.Copy(definition)
+			lock2.RUnlock()
+			lock1.Unlock()
 		}
 	}
 
 	for key, artifact := range self {
 		if _, ok := definitions[key]; !ok {
+			lock := artifact.GetEntityLock()
+			lock.Lock()
 			artifact.DoRender()
+			lock.Unlock()
 		}
 	}
 }
 
 func (self Artifacts) Normalize(normalNodeTemplate *normal.NodeTemplate) {
 	for key, artifact := range self {
+		lock := artifact.GetEntityLock()
+		lock.RLock()
 		normalNodeTemplate.Artifacts[key] = artifact.Normalize(normalNodeTemplate)
+		lock.RUnlock()
 	}
 }

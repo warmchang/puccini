@@ -95,7 +95,13 @@ func (self OperationDefinitions) Inherit(parentDefinitions OperationDefinitions)
 	for name, definition := range self {
 		if parentDefinition, ok := parentDefinitions[name]; ok {
 			if definition != parentDefinition {
+				lock1 := definition.GetEntityLock()
+				lock1.Lock()
+				lock2 := parentDefinition.GetEntityLock()
+				lock2.RLock()
 				definition.Inherit(parentDefinition)
+				lock2.RUnlock()
+				lock1.Unlock()
 			}
 		}
 	}

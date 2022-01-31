@@ -5,7 +5,6 @@ import (
 
 	"github.com/tliron/kutil/ard"
 	urlpkg "github.com/tliron/kutil/url"
-	"github.com/tliron/kutil/util"
 	"github.com/tliron/puccini/tosca"
 )
 
@@ -73,15 +72,14 @@ func (self *ArtifactDefinition) GetURL() urlpkg.URL {
 		return nil
 	}
 
-	lock := util.GetLock(self)
-	lock.Lock()
-	defer lock.Unlock()
-
 	if self.url == nil {
 		if self.Repository != nil {
+			lock := self.Repository.GetEntityLock()
+			lock.Lock()
 			if url := self.Repository.GetURL(); url != nil {
 				self.url = url.Relative(*self.File)
 			}
+			lock.Unlock()
 		} else {
 			origin := self.Context.URL.Origin()
 			origins := []urlpkg.URL{origin}
@@ -176,7 +174,13 @@ func (self ArtifactDefinitions) Inherit(parentDefinitions ArtifactDefinitions) {
 	for name, definition := range self {
 		if parentDefinition, ok := parentDefinitions[name]; ok {
 			if definition != parentDefinition {
+				lock1 := definition.GetEntityLock()
+				lock1.Lock()
+				lock2 := parentDefinition.GetEntityLock()
+				lock2.RLock()
 				definition.Inherit(parentDefinition)
+				lock2.RUnlock()
+				lock1.Unlock()
 			}
 		}
 	}

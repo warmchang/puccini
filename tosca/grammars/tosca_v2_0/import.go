@@ -7,6 +7,7 @@ import (
 
 	"github.com/tliron/kutil/ard"
 	urlpkg "github.com/tliron/kutil/url"
+	"github.com/tliron/kutil/util"
 	"github.com/tliron/puccini/tosca"
 )
 
@@ -88,7 +89,10 @@ func (self *Import) NewImportSpec(unit *Unit) (*tosca.ImportSpec, bool) {
 	var urlContext *urlpkg.Context
 
 	if repository != nil {
+		lock := repository.GetEntityLock()
+		lock.Lock()
 		repositoryUrl := repository.GetURL()
+		lock.Unlock()
 		if repositoryUrl == nil {
 			self.Context.ReportRepositoryInaccessible(repository.Name)
 			return nil, false
@@ -121,6 +125,12 @@ func (self *Import) NewImportSpec(unit *Unit) (*tosca.ImportSpec, bool) {
 func newImportNameTransformer(prefix *string, appendShortCutnames bool) tosca.NameTransformer {
 	return func(name string, entityPtr tosca.EntityPtr) []string {
 		var names []string
+
+		if lock := util.GetEntityLock(entityPtr); lock != nil {
+			// Not RLock because getNormativeNames may change the entity
+			lock.Lock()
+			defer lock.Unlock()
+		}
 
 		if metadata, ok := tosca.GetMetadata(entityPtr); ok {
 			if normative, ok := metadata[tosca.METADATA_NORMATIVE]; ok {

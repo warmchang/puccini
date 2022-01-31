@@ -125,16 +125,25 @@ type WorkflowStepDefinitions map[string]*WorkflowStepDefinition
 
 func (self WorkflowStepDefinitions) Render() {
 	for _, step := range self {
+		lock := step.GetEntityLock()
+		lock.Lock()
 		step.Render(self)
+		lock.Unlock()
 	}
 }
 
 func (self WorkflowStepDefinitions) Normalize(normalWorkflow *normal.Workflow) {
 	steps := make(normal.WorkflowSteps)
 	for name, step := range self {
+		lock := step.GetEntityLock()
+		lock.RLock()
 		steps[name] = step.Normalize(normalWorkflow)
+		lock.RUnlock()
 	}
 	for name, step := range self {
+		lock := step.GetEntityLock()
+		lock.RLock()
 		step.NormalizeNext(steps[name], normalWorkflow)
+		lock.RUnlock()
 	}
 }

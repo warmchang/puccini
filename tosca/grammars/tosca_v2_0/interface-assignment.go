@@ -113,40 +113,64 @@ type InterfaceAssignments map[string]*InterfaceAssignment
 
 func (self InterfaceAssignments) CopyUnassigned(assignments InterfaceAssignments) {
 	for key, assignment := range assignments {
+		lock1 := assignment.GetEntityLock()
+		lock1.RLock()
 		if selfAssignment, ok := self[key]; ok {
+			lock2 := selfAssignment.GetEntityLock()
+			lock2.Lock()
 			selfAssignment.Inputs.CopyUnassigned(assignment.Inputs)
 			selfAssignment.Operations.CopyUnassigned(assignment.Operations)
 			selfAssignment.Notifications.CopyUnassigned(assignment.Notifications)
+			lock2.Unlock()
 		} else {
 			self[key] = assignment
 		}
+		lock1.RUnlock()
 	}
 }
 
 func (self InterfaceAssignments) RenderForNodeTemplate(nodeTemplate *NodeTemplate, definitions InterfaceDefinitions, context *tosca.Context) {
 	self.render(definitions, context)
 	for name, assignment := range self {
+		lock1 := assignment.GetEntityLock()
+		lock1.Lock()
 		if definition, ok := definitions[name]; ok {
+			lock2 := definition.GetEntityLock()
+			lock2.RLock()
 			assignment.RenderForNodeTemplate(nodeTemplate, definition)
+			lock2.RUnlock()
 		}
+		lock1.Unlock()
 	}
 }
 
 func (self InterfaceAssignments) RenderForRelationship(relationship *RelationshipAssignment, definitions InterfaceDefinitions, context *tosca.Context) {
 	self.render(definitions, context)
 	for name, assignment := range self {
+		lock1 := assignment.GetEntityLock()
+		lock1.Lock()
 		if definition, ok := definitions[name]; ok {
+			lock2 := definition.GetEntityLock()
+			lock2.RLock()
 			assignment.RenderForRelationship(relationship, definition)
+			lock2.RUnlock()
 		}
+		lock1.Unlock()
 	}
 }
 
 func (self InterfaceAssignments) RenderForGroup(definitions InterfaceDefinitions, context *tosca.Context) {
 	self.render(definitions, context)
 	for name, assignment := range self {
+		lock1 := assignment.GetEntityLock()
+		lock1.Lock()
 		if definition, ok := definitions[name]; ok {
+			lock2 := definition.GetEntityLock()
+			lock2.RLock()
 			assignment.RenderForGroup(definition)
+			lock2.RUnlock()
 		}
+		lock1.Unlock()
 	}
 }
 
@@ -169,24 +193,42 @@ func (self InterfaceAssignments) render(definitions InterfaceDefinitions, contex
 
 func (self InterfaceAssignments) NormalizeForNodeTemplate(nodeTemplate *NodeTemplate, normalNodeTemplate *normal.NodeTemplate) {
 	for key, interface_ := range self {
+		lock1 := interface_.GetEntityLock()
+		lock1.RLock()
 		if definition, ok := interface_.GetDefinitionForNodeTemplate(nodeTemplate); ok {
+			lock2 := definition.GetEntityLock()
+			lock2.RLock()
 			interface_.Normalize(normalNodeTemplate.NewInterface(key), definition)
+			lock2.RUnlock()
 		}
+		lock1.RUnlock()
 	}
 }
 
 func (self InterfaceAssignments) NormalizeForGroup(group *Group, normalGroup *normal.Group) {
 	for key, interface_ := range self {
+		lock1 := interface_.GetEntityLock()
+		lock1.RLock()
 		if definition, ok := interface_.GetDefinitionForGroup(group); ok {
+			lock2 := definition.GetEntityLock()
+			lock2.RLock()
 			interface_.Normalize(normalGroup.NewInterface(key), definition)
+			lock2.RUnlock()
 		}
+		lock1.RUnlock()
 	}
 }
 
 func (self InterfaceAssignments) NormalizeForRelationship(relationship *RelationshipAssignment, relationshipDefinition *RelationshipDefinition, normalRelationship *normal.Relationship) {
 	for key, interface_ := range self {
+		lock1 := interface_.GetEntityLock()
+		lock1.RLock()
 		if definition, ok := interface_.GetDefinitionForRelationship(relationship, relationshipDefinition); ok {
+			lock2 := definition.GetEntityLock()
+			lock2.RLock()
 			interface_.Normalize(normalRelationship.NewInterface(key), definition)
+			lock2.RUnlock()
 		}
+		lock1.RUnlock()
 	}
 }

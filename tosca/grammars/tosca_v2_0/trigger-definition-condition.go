@@ -42,8 +42,16 @@ func ReadTriggerDefinitionCondition(context *tosca.Context) tosca.EntityPtr {
 
 // parser.Renderable interface
 func (self *TriggerDefinitionCondition) Render() {
+	self.renderOnce.Do(self.render)
+}
+
+func (self *TriggerDefinitionCondition) render() {
 	logRender.Debug("trigger definition condition")
+
 	if self.Period != nil {
+		lock := self.Period.GetEntityLock()
+		lock.Lock()
 		self.Period.RenderDataType("scalar-unit.time")
+		lock.Unlock()
 	}
 }

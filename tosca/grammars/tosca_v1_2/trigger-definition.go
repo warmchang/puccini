@@ -1,6 +1,8 @@
 package tosca_v1_2
 
 import (
+	"sync"
+
 	"github.com/tliron/kutil/ard"
 	"github.com/tliron/puccini/tosca"
 	"github.com/tliron/puccini/tosca/grammars/tosca_v2_0"
@@ -29,6 +31,8 @@ type TriggerDefinition struct {
 	WorkflowAction  *string
 
 	WorkflowDefinition *tosca_v2_0.WorkflowDefinition `lookup:"action,WorkflowAction"`
+
+	renderOnce sync.Once
 }
 
 func NewTriggerDefinition(context *tosca.Context) *TriggerDefinition {
@@ -73,9 +77,16 @@ func (self *TriggerDefinition) GetKey() string {
 
 // parser.Renderable interface
 func (self *TriggerDefinition) Render() {
+	self.renderOnce.Do(self.render)
+}
+
+func (self *TriggerDefinition) render() {
 	logRender.Debugf("trigger definition: %s", self.Name)
 	if self.Schedule != nil {
+		lock := self.Schedule.GetEntityLock()
+		lock.Lock()
 		self.Schedule.RenderDataType("tosca:TimeInterval")
+		lock.Unlock()
 	}
 }
 
@@ -83,9 +94,15 @@ func (self *TriggerDefinition) Normalize(normalPolicy *normal.Policy) *normal.Po
 	normalPolicyTrigger := normalPolicy.NewTrigger()
 
 	if self.OperationAction != nil {
+		lock := self.OperationAction.GetEntityLock()
+		lock.RLock()
 		self.OperationAction.Normalize(normalPolicyTrigger.NewOperation())
+		lock.RUnlock()
 	} else if self.WorkflowDefinition != nil {
+		lock := self.WorkflowDefinition.GetEntityLock()
+		lock.RLock()
 		normalPolicyTrigger.Workflow = normalPolicy.ServiceTemplate.Workflows[self.WorkflowDefinition.Name]
+		lock.RUnlock()
 	}
 
 	// TODO: missing fields
@@ -101,6 +118,9 @@ type TriggerDefinitions map[string]*TriggerDefinition
 
 func (self TriggerDefinitions) Normalize(normalPolicy *normal.Policy) {
 	for _, triggerDefinition := range self {
+		lock := triggerDefinition.GetEntityLock()
+		lock.RLock()
 		triggerDefinition.Normalize(normalPolicy)
+		lock.RUnlock()
 	}
 }

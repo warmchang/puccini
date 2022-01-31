@@ -60,11 +60,14 @@ func ReadSubstitutionMappings(context *tosca.Context) tosca.EntityPtr {
 
 func (self *SubstitutionMappings) IsRequirementMapped(nodeTemplate *NodeTemplate, requirementName string) bool {
 	for _, mapping := range self.RequirementMappings {
+		lock := mapping.GetEntityLock()
+		lock.RLock()
 		if mapping.NodeTemplate == nodeTemplate {
 			if (mapping.RequirementName != nil) && (*mapping.RequirementName == requirementName) {
 				return true
 			}
 		}
+		lock.RUnlock()
 	}
 	return false
 }
@@ -76,18 +79,31 @@ func (self *SubstitutionMappings) Render(inputDefinitions ParameterDefinitions) 
 		return
 	}
 
+	lock := self.NodeType.GetEntityLock()
+	lock.RLock()
+	defer lock.RUnlock()
+
 	for name, mapping := range self.CapabilityMappings {
+		lock1 := mapping.GetEntityLock()
+		lock1.RLock()
 		if definition, ok := self.NodeType.CapabilityDefinitions[name]; ok {
+			lock2 := definition.GetEntityLock()
+			lock2.RLock()
 			if mappedDefinition, ok := mapping.GetCapabilityDefinition(); ok {
+				lock3 := mappedDefinition.GetEntityLock()
+				lock3.RLock()
 				if (definition.CapabilityType != nil) && (mappedDefinition.CapabilityType != nil) {
 					if !self.Context.Hierarchy.IsCompatible(definition.CapabilityType, mappedDefinition.CapabilityType) {
 						self.Context.ReportIncompatibleType(definition.CapabilityType, mappedDefinition.CapabilityType)
 					}
 				}
+				lock3.RUnlock()
 			}
+			lock2.RUnlock()
 		} else {
 			mapping.Context.Clone(name).ReportReferenceNotFound("capability", self.NodeType)
 		}
+		lock1.RUnlock()
 	}
 
 	for name, mapping := range self.RequirementMappings {
@@ -98,16 +114,26 @@ func (self *SubstitutionMappings) Render(inputDefinitions ParameterDefinitions) 
 
 	self.PropertyMappings.Render(inputDefinitions)
 	for name, mapping := range self.PropertyMappings {
+		lock1 := mapping.GetEntityLock()
+		lock1.RLock()
 		if definition, ok := self.NodeType.PropertyDefinitions[name]; ok {
+			definition.Render()
+			lock2 := definition.GetEntityLock()
+			lock2.RLock()
 			if mapping.InputDefinition != nil {
+				lock3 := mapping.InputDefinition.GetEntityLock()
+				lock3.RLock()
 				// Input mapping
 				if (definition.DataType != nil) && (mapping.InputDefinition.DataType != nil) {
 					if !self.Context.Hierarchy.IsCompatible(definition.DataType, mapping.InputDefinition.DataType) {
 						self.Context.ReportIncompatibleType(definition.DataType, mapping.InputDefinition.DataType)
 					}
 				}
+				lock3.RUnlock()
 			} else if mapping.Property != nil {
 				// Property mapping (deprecated in TOSCA 1.3)
+				lock3 := mapping.Property.GetEntityLock()
+				lock3.RLock()
 				if definition.DataType != nil {
 					if mapping.Property.DataType != nil {
 						if !self.Context.Hierarchy.IsCompatible(definition.DataType, mapping.Property.DataType) {
@@ -117,37 +143,60 @@ func (self *SubstitutionMappings) Render(inputDefinitions ParameterDefinitions) 
 						mapping.Property.RenderProperty(definition.DataType, definition)
 					}
 				}
+				lock3.RUnlock()
 			}
+			lock2.RUnlock()
 		} else {
 			mapping.Context.Clone(name).ReportReferenceNotFound("property", self.NodeType)
 		}
+		lock1.RUnlock()
 	}
 
 	self.AttributeMappings.EnsureRender()
 	for name, mapping := range self.AttributeMappings {
+		lock1 := mapping.GetEntityLock()
+		lock1.RLock()
 		if definition, ok := self.NodeType.AttributeDefinitions[name]; ok {
-			if (definition.DataType != nil) && (mapping.Attribute != nil) && (mapping.Attribute.DataType != nil) {
-				if !self.Context.Hierarchy.IsCompatible(definition.DataType, mapping.Attribute.DataType) {
-					self.Context.ReportIncompatibleType(definition.DataType, mapping.Attribute.DataType)
+			lock2 := definition.GetEntityLock()
+			lock2.RLock()
+			if (definition.DataType != nil) && (mapping.Attribute != nil) {
+				lock3 := mapping.Attribute.GetEntityLock()
+				lock3.RLock()
+				if mapping.Attribute.DataType != nil {
+					if !self.Context.Hierarchy.IsCompatible(definition.DataType, mapping.Attribute.DataType) {
+						self.Context.ReportIncompatibleType(definition.DataType, mapping.Attribute.DataType)
+					}
 				}
+				lock3.RUnlock()
 			}
+			lock2.RUnlock()
 		} else {
 			mapping.Context.Clone(name).ReportReferenceNotFound("attribute", self.NodeType)
 		}
+		lock1.RUnlock()
 	}
 
 	for name, mapping := range self.InterfaceMappings {
+		lock1 := mapping.GetEntityLock()
+		lock1.RLock()
 		if definition, ok := self.NodeType.InterfaceDefinitions[name]; ok {
+			lock2 := definition.GetEntityLock()
+			lock2.RLock()
 			if mappedDefinition, ok := mapping.GetInterfaceDefinition(); ok {
+				lock3 := mappedDefinition.GetEntityLock()
+				lock3.RLock()
 				if (definition.InterfaceType != nil) && (mappedDefinition.InterfaceType != nil) {
 					if !self.Context.Hierarchy.IsCompatible(definition.InterfaceType, mappedDefinition.InterfaceType) {
 						self.Context.ReportIncompatibleType(definition.InterfaceType, mappedDefinition.InterfaceType)
 					}
 				}
+				lock3.RUnlock()
 			}
+			lock2.RUnlock()
 		} else {
 			mapping.Context.Clone(name).ReportReferenceNotFound("interface", self.NodeType)
 		}
+		lock1.RUnlock()
 	}
 }
 
@@ -158,6 +207,10 @@ func (self *SubstitutionMappings) Normalize(normalServiceTemplate *normal.Servic
 		return nil
 	}
 
+	lock := self.NodeType.GetEntityLock()
+	lock.RLock()
+	defer lock.RUnlock()
+
 	normalSubstitution := normalServiceTemplate.NewSubstitution()
 
 	normalSubstitution.Type = tosca.GetCanonicalName(self.NodeType)
@@ -167,22 +220,30 @@ func (self *SubstitutionMappings) Normalize(normalServiceTemplate *normal.Servic
 	}
 
 	for _, mapping := range self.CapabilityMappings {
+		lock1 := mapping.GetEntityLock()
+		lock1.RLock()
 		if (mapping.NodeTemplate != nil) && (mapping.CapabilityName != nil) {
 			if normalNodeTemplate, ok := normalServiceTemplate.NodeTemplates[mapping.NodeTemplate.Name]; ok {
 				normalSubstitution.CapabilityMappings[mapping.Name] = normalNodeTemplate.NewMapping("capability", *mapping.CapabilityName)
 			}
 		}
+		lock1.RUnlock()
 	}
 
 	for _, mapping := range self.RequirementMappings {
+		lock1 := mapping.GetEntityLock()
+		lock1.RLock()
 		if (mapping.NodeTemplate != nil) && (mapping.RequirementName != nil) {
 			if normalNodeTemplate, ok := normalServiceTemplate.NodeTemplates[mapping.NodeTemplate.Name]; ok {
 				normalSubstitution.RequirementMappings[mapping.Name] = normalNodeTemplate.NewMapping("requirement", *mapping.RequirementName)
 			}
 		}
+		lock1.RUnlock()
 	}
 
 	for _, mapping := range self.PropertyMappings {
+		lock1 := mapping.GetEntityLock()
+		lock1.RLock()
 		if mapping.NodeTemplate != nil {
 			if normalNodeTemplate, ok := normalServiceTemplate.NodeTemplates[mapping.NodeTemplate.Name]; ok {
 				if mapping.PropertyName != nil {
@@ -194,22 +255,29 @@ func (self *SubstitutionMappings) Normalize(normalServiceTemplate *normal.Servic
 		} else if mapping.InputName != nil {
 			normalSubstitution.PropertyMappings[mapping.Name] = normal.NewMapping("input", *mapping.InputName)
 		}
+		lock1.RUnlock()
 	}
 
 	for _, mapping := range self.AttributeMappings {
+		lock1 := mapping.GetEntityLock()
+		lock1.RLock()
 		if (mapping.NodeTemplate != nil) && (mapping.AttributeName != nil) {
 			if normalNodeTemplate, ok := normalServiceTemplate.NodeTemplates[mapping.NodeTemplate.Name]; ok {
 				normalSubstitution.AttributeMappings[mapping.Name] = normalNodeTemplate.NewMapping("attribute", *mapping.AttributeName)
 			}
 		}
+		lock1.RUnlock()
 	}
 
 	for _, mapping := range self.InterfaceMappings {
+		lock1 := mapping.GetEntityLock()
+		lock1.RLock()
 		if (mapping.NodeTemplate != nil) && (mapping.InterfaceName != nil) {
 			if normalNodeTemplate, ok := normalServiceTemplate.NodeTemplates[mapping.NodeTemplate.Name]; ok {
 				normalSubstitution.InterfaceMappings[mapping.Name] = normalNodeTemplate.NewMapping("interface", *mapping.InterfaceName)
 			}
 		}
+		lock1.RUnlock()
 	}
 
 	return normalSubstitution

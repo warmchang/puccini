@@ -63,6 +63,9 @@ type CapabilityFilters []*CapabilityFilter
 
 func (self CapabilityFilters) Normalize(normalRequirement *normal.Requirement) {
 	for _, capabilityFilter := range self {
+		lock := capabilityFilter.GetEntityLock()
+		lock.RLock()
 		capabilityFilter.Normalize(normalRequirement)
+		lock.RUnlock()
 	}
 }

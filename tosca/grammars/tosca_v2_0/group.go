@@ -48,11 +48,19 @@ func ReadGroup(context *tosca.Context) tosca.EntityPtr {
 
 // parser.Renderable interface
 func (self *Group) Render() {
+	self.renderOnce.Do(self.render)
+}
+
+func (self *Group) render() {
 	logRender.Debugf("group: %s", self.Name)
 
 	if self.GroupType == nil {
 		return
 	}
+
+	lock := self.GroupType.GetEntityLock()
+	lock.RLock()
+	defer lock.RUnlock()
 
 	self.Properties.RenderProperties(self.GroupType.PropertyDefinitions, "property", self.Context.FieldChild("properties", nil))
 	self.Interfaces.RenderForGroup(self.GroupType.InterfaceDefinitions, self.Context.FieldChild("interfaces", nil))
@@ -60,6 +68,9 @@ func (self *Group) Render() {
 	// Validate members
 	if len(self.GroupType.MemberNodeTypes) > 0 {
 		for index, nodeTemplate := range self.MemberNodeTemplates {
+			lock := nodeTemplate.GetEntityLock()
+			lock.Lock()
+
 			compatible := false
 			for _, nodeType := range self.GroupType.MemberNodeTypes {
 				if self.Context.Hierarchy.IsCompatible(nodeType, nodeTemplate.NodeType) {
@@ -67,10 +78,13 @@ func (self *Group) Render() {
 					break
 				}
 			}
+
 			if !compatible {
 				childContext := self.Context.FieldChild("members", nil).ListChild(index, nil)
 				childContext.ReportIncompatible(nodeTemplate.Name, "group", "member")
 			}
+
+			lock.Unlock()
 		}
 	}
 }
@@ -94,9 +108,12 @@ func (self *Group) Normalize(normalServiceTemplate *normal.ServiceTemplate) *nor
 	self.Interfaces.NormalizeForGroup(self, normalGroup)
 
 	for _, nodeTemplate := range self.MemberNodeTemplates {
+		lock := nodeTemplate.GetEntityLock()
+		lock.RLock()
 		if normalNodeTemplate, ok := normalServiceTemplate.NodeTemplates[nodeTemplate.Name]; ok {
 			normalGroup.Members = append(normalGroup.Members, normalNodeTemplate)
 		}
+		lock.RUnlock()
 	}
 
 	return normalGroup
@@ -110,6 +127,9 @@ type Groups []*Group
 
 func (self Groups) Normalize(normalServiceTemplate *normal.ServiceTemplate) {
 	for _, group := range self {
+		lock := group.GetEntityLock()
+		lock.RLock()
 		normalServiceTemplate.Groups[group.Name] = group.Normalize(normalServiceTemplate)
+		lock.RUnlock()
 	}
 }

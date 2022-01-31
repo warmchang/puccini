@@ -1,6 +1,7 @@
 package normal
 
 import (
+	"github.com/tliron/kutil/util"
 	"github.com/tliron/puccini/tosca"
 )
 
@@ -41,9 +42,19 @@ func GetHierarchyTypes(hierarchy *tosca.Hierarchy) Types {
 	types := make(Types)
 
 	hierarchy.Range(func(entityPtr tosca.EntityPtr, parentEntityPtr tosca.EntityPtr) bool {
+		if lock := util.GetEntityLock(entityPtr); lock != nil {
+			lock.RLock()
+			defer lock.RUnlock()
+		}
+
 		type_ := NewType(tosca.GetCanonicalName(entityPtr))
 
 		if parentEntityPtr != nil {
+			if lock := util.GetEntityLock(parentEntityPtr); lock != nil {
+				lock.RLock()
+				defer lock.RUnlock()
+			}
+
 			type_.Parent = tosca.GetCanonicalName(parentEntityPtr)
 		}
 

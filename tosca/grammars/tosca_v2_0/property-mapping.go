@@ -88,16 +88,20 @@ func (self *PropertyMapping) Render(inputDefinitions ParameterDefinitions) {
 		var nodeTemplateType *NodeTemplate
 		if nodeTemplate, ok := self.Context.Namespace.LookupForType(nodeTemplateName, reflect.TypeOf(nodeTemplateType)); ok {
 			self.NodeTemplate = nodeTemplate.(*NodeTemplate)
+
+			lock := self.NodeTemplate.GetEntityLock()
+			lock.Lock()
+			defer lock.Unlock()
+
 			self.NodeTemplate.Render()
+
+			name := *self.PropertyName
+			var ok bool
+			if self.Property, ok = self.NodeTemplate.Properties[name]; !ok {
+				self.Context.ListChild(1, name).ReportReferenceNotFound("property", self.NodeTemplate)
+			}
 		} else {
 			self.Context.ListChild(0, nodeTemplateName).ReportUnknown("node template")
-			return
-		}
-
-		name := *self.PropertyName
-		var ok bool
-		if self.Property, ok = self.NodeTemplate.Properties[name]; !ok {
-			self.Context.ListChild(1, name).ReportReferenceNotFound("property", self.NodeTemplate)
 		}
 	}
 }
@@ -110,6 +114,9 @@ type PropertyMappings map[string]*PropertyMapping
 
 func (self PropertyMappings) Render(inputDefinitions ParameterDefinitions) {
 	for _, mapping := range self {
+		lock := mapping.GetEntityLock()
+		lock.Lock()
 		mapping.Render(inputDefinitions)
+		lock.Unlock()
 	}
 }

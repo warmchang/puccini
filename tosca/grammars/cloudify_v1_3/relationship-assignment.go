@@ -40,12 +40,21 @@ func ReadRelationshipAssignment(context *tosca.Context) tosca.EntityPtr {
 
 // parser.Renderable interface
 func (self *RelationshipAssignment) Render() {
+	self.renderOnce.Do(self.render)
+}
+
+func (self *RelationshipAssignment) render() {
 	logRender.Debug("relationship")
 
 	if self.RelationshipType != nil {
+		lock := self.RelationshipType.GetEntityLock()
+		lock.RLock()
+
 		self.Properties.RenderProperties(self.RelationshipType.PropertyDefinitions, "property", self.Context.FieldChild("properties", nil))
 		self.SourceInterfaces.Render(self.RelationshipType.SourceInterfaceDefinitions, self.Context.FieldChild("source_interfaces", nil))
 		self.TargetInterfaces.Render(self.RelationshipType.TargetInterfaceDefinitions, self.Context.FieldChild("target_interfaces", nil))
+
+		lock.RUnlock()
 	}
 
 	// TODO: this should apply only to derivatives of cloudify.relationships.connected_to and cloudify.relationships.depends_on

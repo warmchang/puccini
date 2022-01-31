@@ -9,13 +9,18 @@ func (self *Context) AddNamespaces() {
 	self.Root.MergeNamespaces(self.NamespacesWork)
 }
 
-func (self *Unit) MergeNamespaces(work *ContextualWork) {
+func (self *Unit) MergeNamespaces(work *CoordinatedWork) {
 	context := self.GetContext()
 
-	if promise, ok := work.Start(context); ok {
+	if promise, ok := work.Start(context.URL.Key()); ok {
 		defer promise.Release()
 
-		for _, import_ := range self.Imports {
+		self.importsLock.RLock()
+		imports := make(Units, len(self.Imports))
+		copy(imports, self.Imports)
+		self.importsLock.RUnlock()
+
+		for _, import_ := range imports {
 			import_.MergeNamespaces(work)
 			context.Namespace.Merge(import_.GetContext().Namespace, import_.NameTransformer)
 			context.ScriptletNamespace.Merge(import_.GetContext().ScriptletNamespace)
@@ -30,6 +35,9 @@ func (self *Unit) MergeNamespaces(work *ContextualWork) {
 // Print
 
 func (self *Context) PrintNamespaces(indent int) {
+	self.unitsLock.RLock()
+	defer self.unitsLock.RUnlock()
+
 	childIndent := indent + 1
 	for _, import_ := range self.Units {
 		context := import_.GetContext()

@@ -45,9 +45,17 @@ func (self *TriggerDefinition) GetKey() string {
 
 // parser.Renderable interface
 func (self *TriggerDefinition) Render() {
+	self.renderOnce.Do(self.render)
+}
+
+func (self *TriggerDefinition) render() {
 	logRender.Debugf("trigger definition: %s", self.Name)
+
 	if self.Schedule != nil {
+		lock := self.Schedule.GetEntityLock()
+		lock.Lock()
 		self.Schedule.RenderDataType("tosca:TimeInterval")
+		lock.Unlock()
 	}
 }
 
@@ -67,6 +75,9 @@ type TriggerDefinitions map[string]*TriggerDefinition
 
 func (self TriggerDefinitions) Normalize(normalPolicy *normal.Policy) {
 	for _, triggerDefinition := range self {
+		lock := triggerDefinition.GetEntityLock()
+		lock.RLock()
 		triggerDefinition.Normalize(normalPolicy)
+		lock.RUnlock()
 	}
 }

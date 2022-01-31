@@ -2,6 +2,7 @@ package tosca_v2_0
 
 import (
 	"github.com/tliron/kutil/ard"
+	"github.com/tliron/kutil/util"
 	"github.com/tliron/puccini/tosca"
 	"github.com/tliron/puccini/tosca/normal"
 )
@@ -29,8 +30,6 @@ type AttributeDefinition struct {
 	Status       *string  `read:"status"`
 
 	DataType *DataType `lookup:"type,DataTypeName" json:"-" yaml:"-"`
-
-	rendered bool
 }
 
 func NewAttributeDefinition(context *tosca.Context) *AttributeDefinition {
@@ -89,24 +88,39 @@ func (self *AttributeDefinition) Inherit(parentDefinition *AttributeDefinition) 
 }
 
 // parser.Renderable interface
+// Avoid rendering more than once (can happen if we were called from Value.RenderAttribute)
 func (self *AttributeDefinition) Render() {
-	logRender.Debugf("attribute definition: %s", self.Name)
-
-	self.render()
-
-	if (self.Default != nil) && (self.DataType != nil) {
-		// The "default" value must be a valid value of the type
-		self.Default.RenderAttribute(self.DataType, self, false, false)
-	}
+	self.renderOnce.Do(self.render)
 }
 
 func (self *AttributeDefinition) render() {
+	logRender.Debugf("attribute definition: %s", self.Name)
 
-	if self.rendered {
-		// Avoid rendering more than once (can happen if we were called from Value.RenderAttribute)
-		return
+	var lock1 util.RWLocker
+	if self.DataType != nil {
+		lock1 = self.DataType.GetEntityLock()
+		lock1.RLock()
 	}
-	self.rendered = true
+
+	self.doRender()
+
+	if lock1 != nil {
+		lock1.RUnlock()
+	}
+
+	if (self.Default != nil) && (self.DataType != nil) {
+		// The "default" value must be a valid value of the type
+		lock2 := self.Default.GetEntityLock()
+		lock2.Lock()
+		lock1.RLock()
+		self.Default.RenderAttribute(self.DataType, self, false, false)
+		lock1.RUnlock()
+		lock2.Unlock()
+	}
+}
+
+func (self *AttributeDefinition) doRender() {
+	// We expect self.DataType to be rlocked
 
 	if self.DataTypeName == nil {
 		self.Context.FieldChild("type", nil).ReportFieldMissing()
@@ -172,7 +186,13 @@ func (self AttributeDefinitions) Inherit(parentDefinitions AttributeDefinitions)
 	for name, definition := range self {
 		if parentDefinition, ok := parentDefinitions[name]; ok {
 			if definition != parentDefinition {
+				lock1 := definition.GetEntityLock()
+				lock1.Lock()
+				lock2 := parentDefinition.GetEntityLock()
+				lock2.RLock()
 				definition.Inherit(parentDefinition)
+				lock2.RUnlock()
+				lock1.Unlock()
 			}
 		}
 	}

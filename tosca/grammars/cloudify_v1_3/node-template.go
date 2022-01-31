@@ -45,11 +45,19 @@ func ReadNodeTemplate(context *tosca.Context) tosca.EntityPtr {
 
 // parser.Renderable interface
 func (self *NodeTemplate) Render() {
+	self.renderOnce.Do(self.render)
+}
+
+func (self *NodeTemplate) render() {
 	logRender.Debugf("node template: %s", self.Name)
 
 	if self.NodeType == nil {
 		return
 	}
+
+	lock := self.NodeType.GetEntityLock()
+	lock.RLock()
+	defer lock.RUnlock()
 
 	self.Properties.RenderProperties(self.NodeType.PropertyDefinitions, "property", self.Context.FieldChild("properties", nil))
 	self.Interfaces.Render(self.NodeType.InterfaceDefinitions, self.Context.FieldChild("interfaces", nil))
@@ -74,7 +82,10 @@ func (self *NodeTemplate) Normalize(normalServiceTemplate *normal.ServiceTemplat
 	normalCapability := normalNodeTemplate.NewCapability("node", normal.NewLocationForContext(capabilityContext))
 	normalCapability.Types = capabilityTypes
 	for _, capability := range self.Capabilities {
+		lock := capability.GetEntityLock()
+		lock.RLock()
 		capability.Properties.Normalize(normalCapability.Properties, capability.Context.Name+".")
+		lock.RUnlock()
 	}
 
 	return normalNodeTemplate
@@ -85,7 +96,10 @@ func (self *NodeTemplate) NormalizeRelationships(normalServiceTemplate *normal.S
 
 	normalNodeTemplate := normalServiceTemplate.NodeTemplates[self.Name]
 	for _, relationship := range self.Relationships {
+		lock := relationship.GetEntityLock()
+		lock.RLock()
 		relationship.Normalize(self, normalNodeTemplate)
+		lock.RUnlock()
 	}
 }
 
@@ -97,12 +111,18 @@ type NodeTemplates []*NodeTemplate
 
 func (self NodeTemplates) Normalize(normalServiceTemplate *normal.ServiceTemplate) {
 	for _, nodeTemplate := range self {
+		lock := nodeTemplate.GetEntityLock()
+		lock.RLock()
 		normalServiceTemplate.NodeTemplates[nodeTemplate.Name] = nodeTemplate.Normalize(normalServiceTemplate)
+		lock.RUnlock()
 	}
 
 	// Relationships must be normalized after node templates
 	// (because they may reference other node templates)
 	for _, nodeTemplate := range self {
+		lock := nodeTemplate.GetEntityLock()
+		lock.RLock()
 		nodeTemplate.NormalizeRelationships(normalServiceTemplate)
+		lock.RLock()
 	}
 }

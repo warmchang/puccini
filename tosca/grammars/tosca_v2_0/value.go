@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/tliron/kutil/ard"
+	"github.com/tliron/kutil/util"
 	"github.com/tliron/puccini/tosca"
 	"github.com/tliron/puccini/tosca/normal"
 	"github.com/tliron/yamlkeys"
@@ -29,8 +30,6 @@ type Value struct {
 	DataType    *DataType                `traverse:"ignore" json:"-" yaml:"-"`
 	Information *normal.ValueInformation `traverse:"ignore" json:"-" yaml:"-"`
 	Converter   *tosca.FunctionCall      `traverse:"ignore" json:"-" yaml:"-"`
-
-	rendered bool
 }
 
 func NewValue(context *tosca.Context) *Value {
@@ -84,6 +83,10 @@ func (self *Value) String() string {
 func (self *Value) RenderDataType(dataTypeName string) {
 	if e, ok := self.Context.Namespace.Lookup(dataTypeName); ok {
 		if dataType, ok := e.(*DataType); ok {
+			lock := dataType.GetEntityLock()
+			lock.RLock()
+			defer lock.RUnlock()
+
 			self.RenderAttribute(dataType, nil, false, false)
 		} else {
 			self.Context.ReportUnknownDataType(dataTypeName)
@@ -93,18 +96,13 @@ func (self *Value) RenderDataType(dataTypeName string) {
 	}
 }
 
+// Avoid rendering more than once (can happen if we were copied from PropertyDefinition.Default)
 func (self *Value) RenderAttribute(dataType *DataType, definition *AttributeDefinition, bare bool, allowNil bool) {
-	if self.rendered {
-		// Avoid rendering more than once (can happen if we were copied from PropertyDefinition.Default)
-		return
-	}
-	self.rendered = true
-
 	self.DataType = dataType
 
-	if definition != nil {
+	/*if definition != nil {
 		definition.Render()
-	}
+	}*/
 
 	if !bare {
 		if self.Description != nil {
@@ -158,14 +156,28 @@ func (self *Value) RenderAttribute(dataType *DataType, definition *AttributeDefi
 				// (The entry schema may also have additional constraints)
 				switch internalTypeName {
 				case ard.TypeList, ard.TypeMap:
-					if (definition == nil) || (definition.EntrySchema == nil) || (definition.EntrySchema.DataType == nil) {
-						// This problem is reported in AttributeDefinition.Render
+					if definition == nil {
 						return
+					} else if definition.EntrySchema == nil {
+						return
+					} else {
+						lock := definition.EntrySchema.GetEntityLock()
+						lock.RLock()
+						defer lock.RUnlock()
+						if definition.EntrySchema.DataType == nil {
+							// This problem is reported in AttributeDefinition.Render
+							return
+						}
 					}
 
 					if internalTypeName == ard.TypeList {
 						// Information
 						entryDataType := definition.EntrySchema.DataType
+						if entryDataType != dataType {
+							lock := entryDataType.GetEntityLock()
+							lock.RLock()
+							defer lock.RUnlock()
+						}
 						entryConstraints := definition.EntrySchema.GetConstraints()
 						self.Information.Entry = entryDataType.GetTypeInformation()
 						if definition.EntrySchema.Description != nil {
@@ -187,14 +199,30 @@ func (self *Value) RenderAttribute(dataType *DataType, definition *AttributeDefi
 							return
 						}
 
+						lock := definition.KeySchema.GetEntityLock()
+						lock.RLock()
+						defer lock.RUnlock()
+
 						// Information
+
 						keyDataType := definition.KeySchema.DataType
+						if keyDataType != dataType {
+							lock1 := keyDataType.GetEntityLock()
+							lock1.RLock()
+							defer lock1.RUnlock()
+						}
 						keyConstraints := definition.KeySchema.GetConstraints()
 						self.Information.Key = keyDataType.GetTypeInformation()
 						if definition.KeySchema.Description != nil {
 							self.Information.Key.SchemaDescription = *definition.KeySchema.Description
 						}
+
 						valueDataType := definition.EntrySchema.DataType
+						if (valueDataType != dataType) && (valueDataType != keyDataType) {
+							lock2 := valueDataType.GetEntityLock()
+							lock2.RLock()
+							defer lock2.RUnlock()
+						}
 						valueConstraints := definition.EntrySchema.GetConstraints()
 						self.Information.Value = valueDataType.GetTypeInformation()
 						if definition.EntrySchema.Description != nil {
@@ -242,6 +270,7 @@ func (self *Value) RenderAttribute(dataType *DataType, definition *AttributeDefi
 
 		// Render properties
 		for key, definition := range dataType.PropertyDefinitions {
+			definition.Render()
 			if data, ok := map_[key]; ok {
 				var value *Value
 				if value, ok = data.(*Value); !ok {
@@ -250,7 +279,15 @@ func (self *Value) RenderAttribute(dataType *DataType, definition *AttributeDefi
 					map_[key] = value
 				}
 				if definition.DataType != nil {
+					var lock util.RWLocker
+					if definition.DataType != dataType {
+						lock = definition.DataType.GetEntityLock()
+						lock.RLock()
+					}
 					value.RenderProperty(definition.DataType, definition)
+					if lock != nil {
+						lock.RUnlock()
+					}
 				}
 
 				// Grab information
@@ -288,6 +325,11 @@ func (self *Value) RenderProperty(dataType *DataType, definition *PropertyDefini
 		self.RenderAttribute(dataType, nil, false, false)
 	} else {
 		self.ConstraintClauses.Render(dataType)
+		if definition.DataType != dataType {
+			lock := definition.DataType.GetEntityLock()
+			lock.RLock()
+			defer lock.RUnlock()
+		}
 		definition.ConstraintClauses.Render(definition.DataType)
 		self.ConstraintClauses = definition.ConstraintClauses.Append(self.ConstraintClauses)
 		self.RenderAttribute(dataType, definition.AttributeDefinition, false, false)
@@ -379,12 +421,22 @@ func (self Values) RenderMissingValue(definition *AttributeDefinition, kind stri
 
 func (self Values) RenderProperties(definitions PropertyDefinitions, kind string, context *tosca.Context) {
 	for key, definition := range definitions {
+		definition.Render()
+		lock1 := definition.GetEntityLock()
+		lock1.RLock()
 		if value, ok := self[key]; !ok {
 			self.RenderMissingValue(definition.AttributeDefinition, kind, definition.IsRequired(), context)
 			// (If the above assigns the "default" value -- it has already been rendered elsewhere)
 		} else if definition.DataType != nil {
+			lock2 := value.GetEntityLock()
+			lock2.Lock()
+			lock3 := definition.DataType.GetEntityLock()
+			lock3.RLock()
 			value.RenderProperty(definition.DataType, definition)
+			lock3.RUnlock()
+			lock2.Unlock()
 		}
+		lock1.RUnlock()
 	}
 
 	for key, value := range self {
@@ -398,7 +450,10 @@ func (self Values) RenderProperties(definitions PropertyDefinitions, kind string
 func (self Values) RenderAttributes(definitions AttributeDefinitions, context *tosca.Context) {
 	for key, definition := range definitions {
 		if _, ok := self[key]; !ok {
+			lock := definition.GetEntityLock()
+			lock.RLock()
 			self.RenderMissingValue(definition, "attribute", false, context)
+			lock.RUnlock()
 		}
 	}
 
@@ -406,15 +461,30 @@ func (self Values) RenderAttributes(definitions AttributeDefinitions, context *t
 		if definition, ok := definitions[key]; !ok {
 			value.Context.ReportUndeclared("attribute")
 			delete(self, key)
-		} else if definition.DataType != nil {
-			value.RenderAttribute(definition.DataType, definition, false, true)
+		} else {
+			definition.Render()
+			lock1 := definition.GetEntityLock()
+			lock1.RLock()
+			if definition.DataType != nil {
+				lock2 := value.GetEntityLock()
+				lock2.Lock()
+				lock3 := definition.DataType.GetEntityLock()
+				lock3.RLock()
+				value.RenderAttribute(definition.DataType, definition, false, true)
+				lock3.RUnlock()
+				lock2.Unlock()
+			}
+			lock1.RUnlock()
 		}
 	}
 }
 
 func (self Values) Normalize(normalConstrainables normal.Constrainables) {
 	for key, value := range self {
+		lock := value.GetEntityLock()
+		lock.RLock()
 		normalConstrainables[key] = value.Normalize()
+		lock.RUnlock()
 	}
 }
 
@@ -445,7 +515,10 @@ func (self *ValueList) Normalize(context *tosca.Context) *normal.List {
 
 	for index, value := range self.Slice {
 		if v, ok := value.(*Value); ok {
+			lock := v.GetEntityLock()
+			lock.RLock()
 			normalList.Set(index, v.normalize(false))
+			lock.RUnlock()
 		} else {
 			normalList.Set(index, normal.NewValue(value))
 		}
@@ -487,7 +560,10 @@ func (self *ValueMap) Normalize(context *tosca.Context) *normal.Map {
 			key = k.normalize(false)
 		}
 		if v, ok := value.(*Value); ok {
+			lock := v.GetEntityLock()
+			lock.RLock()
 			normalMap.Put(key, v.normalize(false))
+			lock.RUnlock()
 		} else {
 			normalMap.Put(key, normal.NewValue(value))
 		}

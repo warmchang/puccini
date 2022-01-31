@@ -61,6 +61,10 @@ func (self *ParameterDefinition) Render(kind string, mapped []string) {
 			return
 		}
 	} else if self.DataType != nil {
+		lock := self.DataType.GetEntityLock()
+		lock.RLock()
+		defer lock.RUnlock()
+
 		self.Value.RenderProperty(self.DataType, self.PropertyDefinition)
 	}
 }
@@ -73,6 +77,9 @@ func (self *ParameterDefinition) Normalize(context *tosca.Context) normal.Constr
 		// Parameters should always appear, even if they have no default value
 		value = NewValue(context.MapChild(self.Name, nil))
 	}
+	lock := value.GetEntityLock()
+	lock.RLock()
+	defer lock.RUnlock()
 	return value.Normalize()
 }
 
@@ -84,12 +91,18 @@ type ParameterDefinitions map[string]*ParameterDefinition
 
 func (self ParameterDefinitions) Render(kind string, mapped []string, context *tosca.Context) {
 	for _, definition := range self {
+		lock := definition.GetEntityLock()
+		lock.Lock()
 		definition.Render(kind, mapped)
+		lock.Unlock()
 	}
 }
 
 func (self ParameterDefinitions) Normalize(c normal.Constrainables, context *tosca.Context) {
 	for key, definition := range self {
+		lock := definition.GetEntityLock()
+		lock.RLock()
 		c[key] = definition.Normalize(context)
+		lock.RUnlock()
 	}
 }

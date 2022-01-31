@@ -54,11 +54,19 @@ func (self *Policy) GetKey() string {
 
 // parser.Renderable interface
 func (self *Policy) Render() {
+	self.renderOnce.Do(self.render)
+}
+
+func (self *Policy) render() {
 	logRender.Debugf("policy: %s", self.Name)
 
 	if self.PolicyType == nil {
 		return
 	}
+
+	lock := self.PolicyType.GetEntityLock()
+	lock.RLock()
+	defer lock.RUnlock()
 
 	self.Properties.RenderProperties(self.PolicyType.PropertyDefinitions, "property", self.Context.FieldChild("properties", nil))
 
@@ -66,6 +74,9 @@ func (self *Policy) Render() {
 
 	if len(self.PolicyType.TargetNodeTypes) > 0 {
 		for index, nodeTemplate := range self.TargetNodeTemplates {
+			lock := nodeTemplate.GetEntityLock()
+			lock.RLock()
+
 			compatible := false
 			for _, nodeType := range self.PolicyType.TargetNodeTypes {
 				if self.Context.Hierarchy.IsCompatible(nodeType, nodeTemplate.NodeType) {
@@ -73,15 +84,21 @@ func (self *Policy) Render() {
 					break
 				}
 			}
+
 			if !compatible {
 				childContext := self.Context.FieldChild("targets", nil).ListChild(index, nil)
 				childContext.ReportIncompatible(nodeTemplate.Name, "policy", "target")
 			}
+
+			lock.RUnlock()
 		}
 	}
 
 	if len(self.PolicyType.TargetGroupTypes) > 0 {
 		for index, group := range self.TargetGroups {
+			lock := group.GetEntityLock()
+			lock.Lock()
+
 			compatible := false
 			for _, groupType := range self.PolicyType.TargetGroupTypes {
 				if self.Context.Hierarchy.IsCompatible(groupType, group.GroupType) {
@@ -89,10 +106,13 @@ func (self *Policy) Render() {
 					break
 				}
 			}
+
 			if !compatible {
 				childContext := self.Context.FieldChild("targets", nil).ListChild(index, nil)
 				childContext.ReportIncompatible(group.Name, "policy", "target")
 			}
+
+			lock.Unlock()
 		}
 	}
 }
@@ -115,15 +135,21 @@ func (self *Policy) Normalize(normalServiceTemplate *normal.ServiceTemplate) *no
 	self.Properties.Normalize(normalPolicy.Properties)
 
 	for _, nodeTemplate := range self.TargetNodeTemplates {
+		lock := nodeTemplate.GetEntityLock()
+		lock.RLock()
 		if normalNodeTemplate, ok := normalServiceTemplate.NodeTemplates[nodeTemplate.Name]; ok {
 			normalPolicy.NodeTemplateTargets = append(normalPolicy.NodeTemplateTargets, normalNodeTemplate)
 		}
+		lock.RUnlock()
 	}
 
 	for _, group := range self.TargetGroups {
+		lock := group.GetEntityLock()
+		lock.RLock()
 		if normalGroup, ok := normalServiceTemplate.Groups[group.Name]; ok {
 			normalPolicy.GroupTargets = append(normalPolicy.GroupTargets, normalGroup)
 		}
+		lock.RUnlock()
 	}
 
 	self.TriggerDefinitions.Normalize(normalPolicy)
@@ -139,6 +165,9 @@ type Policies []*Policy
 
 func (self Policies) Normalize(normalServiceTemplate *normal.ServiceTemplate) {
 	for _, policy := range self {
+		lock := policy.GetEntityLock()
+		lock.RLock()
 		normalServiceTemplate.Policies[policy.Name] = policy.Normalize(normalServiceTemplate)
+		lock.RUnlock()
 	}
 }

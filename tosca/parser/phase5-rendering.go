@@ -21,7 +21,7 @@ type Renderable interface {
 func Render(entityPtr tosca.EntityPtr) tosca.EntityPtrs {
 	var entityPtrs tosca.EntityPtrs
 
-	reflection.Traverse(entityPtr, func(entityPtr tosca.EntityPtr) bool {
+	reflection.TraverseEntities(entityPtr, func(entityPtr tosca.EntityPtr) bool {
 		if renderable, ok := entityPtr.(Renderable); ok {
 			renderable.Render()
 			entityPtrs = append(entityPtrs, entityPtr)

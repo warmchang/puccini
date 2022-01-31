@@ -48,6 +48,10 @@ func (self *WorkflowDefinition) GetKey() string {
 
 // parser.Renderable interface
 func (self *WorkflowDefinition) Render() {
+	self.renderOnce.Do(self.render)
+}
+
+func (self *WorkflowDefinition) render() {
 	logRender.Debugf("workflow definition: %s", self.Name)
 
 	self.StepDefinitions.Render()
@@ -82,6 +86,9 @@ type WorkflowDefinitions map[string]*WorkflowDefinition
 
 func (self WorkflowDefinitions) Normalize(normalServiceTemplate *normal.ServiceTemplate) {
 	for _, workflowDefinition := range self {
+		lock := workflowDefinition.GetEntityLock()
+		lock.RLock()
 		normalServiceTemplate.Workflows[workflowDefinition.Name] = workflowDefinition.Normalize(normalServiceTemplate)
+		lock.RUnlock()
 	}
 }

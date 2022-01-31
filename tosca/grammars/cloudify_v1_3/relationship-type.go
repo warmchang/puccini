@@ -43,11 +43,19 @@ func (self *RelationshipType) GetParent() tosca.EntityPtr {
 
 // tosca.Inherits interface
 func (self *RelationshipType) Inherit() {
+	self.inheritOnce.Do(self.inherit)
+}
+
+func (self *RelationshipType) inherit() {
 	logInherit.Debugf("relationship type: %s", self.Name)
 
 	if self.Parent == nil {
 		return
 	}
+
+	lock := self.Parent.GetEntityLock()
+	lock.RLock()
+	defer lock.RUnlock()
 
 	self.SourceInterfaceDefinitions.Inherit(self.Parent.SourceInterfaceDefinitions)
 	self.TargetInterfaceDefinitions.Inherit(self.Parent.TargetInterfaceDefinitions)

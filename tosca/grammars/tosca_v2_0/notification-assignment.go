@@ -82,43 +82,64 @@ type NotificationAssignments map[string]*NotificationAssignment
 
 func (self NotificationAssignments) CopyUnassigned(assignments NotificationAssignments) {
 	for key, assignment := range assignments {
+		lock1 := assignment.GetEntityLock()
+		lock1.Lock()
 		if selfAssignment, ok := self[key]; ok {
+			lock2 := selfAssignment.GetEntityLock()
+			lock2.Lock()
 			selfAssignment.Outputs.CopyUnassigned(assignment.Outputs)
+			lock2.Unlock()
 		} else {
 			self[key] = assignment
 		}
+		lock1.Unlock()
 	}
 }
 
 func (self NotificationAssignments) RenderForNodeTemplate(nodeTemplate *NodeTemplate, definitions NotificationDefinitions, context *tosca.Context) {
 	self.render(definitions, context)
 	for _, assignment := range self {
+		lock := assignment.GetEntityLock()
+		lock.Lock()
 		assignment.Outputs.RenderForNodeTemplate(nodeTemplate)
+		lock.Unlock()
 	}
 }
 
 func (self NotificationAssignments) RenderForRelationship(relationship *RelationshipAssignment, definitions NotificationDefinitions, context *tosca.Context) {
 	self.render(definitions, context)
 	for _, assignment := range self {
+		lock := assignment.GetEntityLock()
+		lock.Lock()
 		assignment.Outputs.RenderForRelationship(relationship)
+		lock.Unlock()
 	}
 }
 
 func (self NotificationAssignments) RenderForGroup(definitions NotificationDefinitions, context *tosca.Context) {
 	self.render(definitions, context)
 	for _, assignment := range self {
+		lock := assignment.GetEntityLock()
+		lock.Lock()
 		assignment.Outputs.RenderForGroup()
+		lock.Unlock()
 	}
 }
 
 func (self NotificationAssignments) render(definitions NotificationDefinitions, context *tosca.Context) {
 	for key, definition := range definitions {
+		lock1 := definition.GetEntityLock()
+		lock1.RLock()
+
 		assignment, ok := self[key]
 
 		if !ok {
 			assignment = NewNotificationAssignment(context.FieldChild(key, nil))
 			self[key] = assignment
 		}
+
+		lock2 := assignment.GetEntityLock()
+		lock2.Lock()
 
 		if assignment.Description == nil {
 			assignment.Description = definition.Description
@@ -130,10 +151,16 @@ func (self NotificationAssignments) render(definitions NotificationDefinitions, 
 		}
 
 		if assignment.Implementation != nil {
+			lock3 := assignment.Implementation.GetEntityLock()
+			lock3.Lock()
 			assignment.Implementation.Render(definition.Implementation)
+			lock3.Unlock()
 		}
 
 		assignment.Outputs.Inherit(definition.Outputs)
+
+		lock2.Unlock()
+		lock1.RUnlock()
 	}
 
 	for key, assignment := range self {
@@ -146,6 +173,9 @@ func (self NotificationAssignments) render(definitions NotificationDefinitions, 
 
 func (self NotificationAssignments) Normalize(normalInterface *normal.Interface) {
 	for key, notification := range self {
+		lock := notification.GetEntityLock()
+		lock.RLock()
 		normalInterface.Notifications[key] = notification.Normalize(normalInterface)
+		lock.RUnlock()
 	}
 }

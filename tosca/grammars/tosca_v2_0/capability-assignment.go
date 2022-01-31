@@ -104,7 +104,13 @@ func (self CapabilityAssignments) Render(definitions CapabilityDefinitions, cont
 			assignment = NewCapabilityAssignment(context.MapChild(key, nil))
 			self[key] = assignment
 		}
+		lock1 := assignment.GetEntityLock()
+		lock1.Lock()
+		lock2 := definition.GetEntityLock()
+		lock2.RLock()
 		assignment.Render(definition)
+		lock2.RUnlock()
+		lock1.Unlock()
 	}
 
 	for key, assignment := range self {
@@ -115,10 +121,13 @@ func (self CapabilityAssignments) Render(definitions CapabilityDefinitions, cont
 	}
 }
 
-func (self CapabilityAssignments) Normalize(nodeTemplate *NodeTemplate, n *normal.NodeTemplate) {
+func (self CapabilityAssignments) Normalize(nodeTemplate *NodeTemplate, normalNodeTemplate *normal.NodeTemplate) {
 	for key, capability := range self {
 		if definition, ok := capability.GetDefinition(nodeTemplate); ok {
-			n.Capabilities[key] = capability.Normalize(n, definition)
+			lock := definition.GetEntityLock()
+			lock.RLock()
+			normalNodeTemplate.Capabilities[key] = capability.Normalize(normalNodeTemplate, definition)
+			lock.RUnlock()
 		}
 	}
 }

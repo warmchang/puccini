@@ -5,10 +5,10 @@ import (
 	"reflect"
 	"sort"
 	"strings"
-	"sync"
 
 	"github.com/tliron/kutil/reflection"
 	"github.com/tliron/kutil/terminal"
+	"github.com/tliron/kutil/util"
 )
 
 //
@@ -22,15 +22,16 @@ type Hierarchical interface {
 // From Hierarchical interface
 func GetParent(entityPtr EntityPtr) (EntityPtr, bool) {
 	if hierarchical, ok := entityPtr.(Hierarchical); ok {
-		parent := hierarchical.GetParent()
-		parentValue := reflect.ValueOf(parent)
+		parentPtr := hierarchical.GetParent()
+		parentValue := reflect.ValueOf(parentPtr)
 		if !parentValue.IsNil() {
-			return parent, true
+			return parentPtr, true
 		} else {
 			return nil, true
 		}
+	} else {
+		return nil, false
 	}
-	return nil, false
 }
 
 //
@@ -41,26 +42,33 @@ type Hierarchy struct {
 	entityPtr EntityPtr
 	parent    *Hierarchy
 	children  []*Hierarchy
-	lock      *sync.RWMutex // shared recursively with children
+	lock      util.RWLocker // shared recursively with children
 }
 
 // Keeps track of failed types
-type HierarchyContext map[EntityPtr]bool
+type HierarchyContext = EntityPtrSet
 
 type HierarchyDescendants []EntityPtr
 
 func NewHierarchy() *Hierarchy {
 	return &Hierarchy{
-		lock: new(sync.RWMutex),
+		lock: util.NewDebugRWLocker(),
 	}
 }
 
 func NewHierarchyFor(entityPtr EntityPtr, hierarchyContext HierarchyContext) *Hierarchy {
 	self := NewHierarchy()
 
-	reflection.Traverse(entityPtr, func(entityPtr EntityPtr) bool {
+	reflection.TraverseEntities(entityPtr, func(entityPtr EntityPtr) bool {
 		if parentPtr, ok := GetParent(entityPtr); ok {
+			lock := util.GetEntityLock(entityPtr)
+			if lock != nil {
+				lock.Unlock()
+			}
 			self.add(entityPtr, parentPtr, hierarchyContext, HierarchyDescendants{})
+			if lock != nil {
+				lock.Lock()
+			}
 		}
 		return true
 	})
@@ -198,8 +206,7 @@ func (self *Hierarchy) IsCompatible(baseEntityPtr EntityPtr, entityPtr EntityPtr
 
 func (self *Hierarchy) add(entityPtr EntityPtr, parentEntityPtr EntityPtr, hierarchyContext HierarchyContext, descendants HierarchyDescendants) (*Hierarchy, bool) {
 	// Several imports may try to add the same entity to their hierarchies, so let's avoid multiple problem reports
-	_, alreadyFailed := hierarchyContext[entityPtr]
-	if alreadyFailed {
+	if hierarchyContext.Contains(entityPtr) {
 		return nil, false
 	}
 
@@ -210,15 +217,15 @@ func (self *Hierarchy) add(entityPtr EntityPtr, parentEntityPtr EntityPtr, hiera
 		return found, true
 	}
 
-	child := &Hierarchy{
+	child := Hierarchy{
 		entityPtr: entityPtr,
 		lock:      self.lock,
 	}
 
 	if parentEntityPtr == nil {
 		// We are a root node
-		root.addChild(child)
-		return child, true
+		root.addChild(&child)
+		return &child, true
 	}
 
 	context := GetContext(entityPtr)
@@ -227,12 +234,20 @@ func (self *Hierarchy) add(entityPtr EntityPtr, parentEntityPtr EntityPtr, hiera
 	for _, descendant := range descendants {
 		if descendant == entityPtr {
 			context.ReportInheritanceLoop(parentEntityPtr)
-			hierarchyContext[entityPtr] = true
+			hierarchyContext.Add(entityPtr)
 			return nil, false
 		}
 	}
 
+	parentLock := util.GetEntityLock(parentEntityPtr)
+	if parentLock != nil {
+		parentLock.RLock()
+	}
+
 	grandparentEntityPtr, ok := GetParent(parentEntityPtr)
+	if parentLock != nil {
+		parentLock.RUnlock()
+	}
 	if !ok {
 		panic(fmt.Sprintf("parent is somehow of the wrong type (it doesn't have a \"parent\" tag): %s", context.Path))
 	}
@@ -244,15 +259,15 @@ func (self *Hierarchy) add(entityPtr EntityPtr, parentEntityPtr EntityPtr, hiera
 		_, alreadyFailed := hierarchyContext[entityPtr]
 		if !alreadyFailed {
 			context.ReportTypeIncomplete(parentEntityPtr)
-			hierarchyContext[entityPtr] = true
+			hierarchyContext.Add(entityPtr)
 		}
 		return nil, false
 	}
 
 	// Add ourself to parent node
-	parentNode.addChild(child)
+	parentNode.addChild(&child)
 
-	return child, true
+	return &child, true
 }
 
 func (self *Hierarchy) Merge(hierarchy *Hierarchy, hierarchyContext HierarchyContext) {
@@ -263,17 +278,27 @@ func (self *Hierarchy) Merge(hierarchy *Hierarchy, hierarchyContext HierarchyCon
 	self.lock.Lock()
 	defer self.lock.Unlock()
 
-	if self.lock != hierarchy.lock {
-		hierarchy.lock.RLock()
-		defer hierarchy.lock.RUnlock()
-	}
-
 	self.merge(hierarchy, hierarchyContext)
 }
 
 func (self *Hierarchy) merge(hierarchy *Hierarchy, hierarchyContext HierarchyContext) {
+	// Expects self to be locked
+
+	/*if self.lock != hierarchy.lock {
+		hierarchy.lock.RLock()
+		defer hierarchy.lock.RUnlock()
+	}*/
+
 	if hierarchy.entityPtr != nil {
-		if parentPtr, ok := GetParent(hierarchy.entityPtr); ok {
+		lock := util.GetEntityLock(hierarchy.entityPtr)
+		if lock != nil {
+			lock.RLock()
+		}
+		parentPtr, ok := GetParent(hierarchy.entityPtr)
+		if lock != nil {
+			lock.RUnlock()
+		}
+		if ok {
 			self.add(hierarchy.entityPtr, parentPtr, hierarchyContext, HierarchyDescendants{})
 		}
 	}
@@ -288,6 +313,8 @@ func (self *Hierarchy) addChild(hierarchy *Hierarchy) {
 	self.children = append(self.children, hierarchy)
 }
 
+// TODO: Do we need this?
+
 // Into "hierarchy" tags
 func (self *Hierarchy) AddTo(entityPtr EntityPtr) {
 	self.lock.RLock()
@@ -297,18 +324,20 @@ func (self *Hierarchy) AddTo(entityPtr EntityPtr) {
 		type_ := field.Type()
 		if reflection.IsSliceOfPtrToStruct(type_) {
 			type_ = type_.Elem()
-			self.addTypeTo(field, type_)
+			self.appendTypeToSlice(field, type_)
+		} else {
+			panic(fmt.Sprintf("\"hierarchy\" tag is incompatible with []*struct{}: %v", type_))
 		}
 	}
 }
 
-func (self *Hierarchy) addTypeTo(field reflect.Value, type_ reflect.Type) {
+func (self *Hierarchy) appendTypeToSlice(field reflect.Value, type_ reflect.Type) {
 	if reflect.TypeOf(self.entityPtr) == type_ {
 		// Don't add if it's already there
 		found := false
 		length := field.Len()
-		for i := 0; i < length; i++ {
-			element := field.Index(i)
+		for index := 0; index < length; index++ {
+			element := field.Index(index)
 			if element.Interface() == self.entityPtr {
 				found = true
 				break
@@ -321,7 +350,7 @@ func (self *Hierarchy) addTypeTo(field reflect.Value, type_ reflect.Type) {
 	}
 
 	for _, child := range self.children {
-		child.addTypeTo(field, type_)
+		child.appendTypeToSlice(field, type_)
 	}
 }
 

@@ -64,6 +64,10 @@ func (self *ParameterDefinition) Inherit(parentDefinition *ParameterDefinition) 
 
 // parser.Renderable interface
 func (self *ParameterDefinition) Render() {
+	self.renderOnce.Do(self.render)
+}
+
+func (self *ParameterDefinition) render() {
 	logRender.Debugf("parameter definition: %s", self.Name)
 
 	if self.DataType == nil {
@@ -71,6 +75,10 @@ func (self *ParameterDefinition) Render() {
 	}
 
 	if self.Default != nil {
+		lock := self.DataType.GetEntityLock()
+		lock.Lock()
+		defer lock.Unlock()
+
 		// The "default" value must be a valid value of the type
 		self.Default.RenderParameter(self.DataType, self, false, false)
 	}
@@ -100,7 +108,13 @@ func (self ParameterDefinitions) Inherit(parentDefinitions ParameterDefinitions)
 	for name, definition := range self {
 		if parentDefinition, ok := parentDefinitions[name]; ok {
 			if definition != parentDefinition {
+				lock1 := definition.GetEntityLock()
+				lock1.Lock()
+				lock2 := parentDefinition.GetEntityLock()
+				lock2.RLock()
 				definition.Inherit(parentDefinition)
+				lock2.RUnlock()
+				lock1.Unlock()
 			}
 		}
 	}

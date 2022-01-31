@@ -8,32 +8,36 @@ import (
 	"github.com/tliron/puccini/tosca"
 )
 
-func (self *Context) Traverse(log logging.Logger, traverse reflection.Traverser) {
-	work := make(EntityWork)
-	var traversed tosca.EntityPtrs
+func (self *Context) TraverseEntities(log logging.Logger, work EntityWork, traverse reflection.EntityTraverser) {
+	if work == nil {
+		work = make(EntityWork)
+	}
 
+	//var traversed tosca.EntityPtrs
+
+	// reflection.EntityTraverser signature
 	traverseWrapper := func(entityPtr tosca.EntityPtr) bool {
 		if work.Start(log, entityPtr) {
 			return false
 		}
 
 		// Don't traverse the same entity more than once
-		for _, entityPtr_ := range traversed {
+		/*for _, entityPtr_ := range traversed {
 			if entityPtr_ == entityPtr {
 				return false
 			}
 		}
-		traversed = append(traversed, entityPtr)
+		traversed = append(traversed, entityPtr)*/
 
 		return traverse(entityPtr)
 	}
 
 	// Root
-	reflection.Traverse(self.Root.EntityPtr, traverseWrapper)
+	reflection.TraverseEntities(self.Root.EntityPtr, traverseWrapper)
 
 	// Types
-	self.Root.GetContext().Namespace.Range(func(forType tosca.EntityPtr, entityPtr tosca.EntityPtr) bool {
-		reflection.Traverse(entityPtr, traverseWrapper)
+	self.Root.GetContext().Namespace.Range(func(entityPtr tosca.EntityPtr) bool {
+		reflection.TraverseEntities(entityPtr, traverseWrapper)
 		return true
 	})
 }
@@ -42,34 +46,33 @@ func (self *Context) Traverse(log logging.Logger, traverse reflection.Traverser)
 // EntityWork
 //
 
-type EntityWork map[tosca.EntityPtr]bool
+type EntityWork map[tosca.EntityPtr]struct{}
 
 func (self EntityWork) Start(log logging.Logger, entityPtr tosca.EntityPtr) bool {
 	if _, ok := self[entityPtr]; ok {
 		log.Debugf("skip: %s", tosca.GetContext(entityPtr).Path)
 		return true
 	}
-	self[entityPtr] = true
+	self[entityPtr] = struct{}{}
 	return false
 }
 
 //
-// ContextualWork
+// CoordinatedWork
 //
 
-type ContextualWork struct {
+type CoordinatedWork struct {
 	sync.Map
 	Log logging.Logger
 }
 
-func NewContextualWork(log logging.Logger) *ContextualWork {
-	return &ContextualWork{
+func NewCoordinatedWork(log logging.Logger) *CoordinatedWork {
+	return &CoordinatedWork{
 		Log: log,
 	}
 }
 
-func (self *ContextualWork) Start(context *tosca.Context) (Promise, bool) {
-	key := context.URL.Key()
+func (self *CoordinatedWork) Start(key string) (Promise, bool) {
 	promise := NewPromise()
 	if existing, loaded := self.LoadOrStore(key, promise); !loaded {
 		self.Log.Debugf("start: %s", key)
@@ -86,7 +89,7 @@ func (self *ContextualWork) Start(context *tosca.Context) (Promise, bool) {
 // Promise
 //
 
-type Promise chan bool
+type Promise chan struct{}
 
 func NewPromise() Promise {
 	return make(Promise)
