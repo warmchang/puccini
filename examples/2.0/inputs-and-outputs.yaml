@@ -1,7 +1,7 @@
 tosca_definitions_version: tosca_2_0
 
 # To see the constraints and outputs in action run:
-#   puccini-tosca compile --coerce --input ram=1gib inputs-and-outputs.yaml
+#   puccini-tosca compile --coerce --input ram="1 GiB" inputs-and-outputs.yaml
 
 imports:
   - url: https://raw.githubusercontent.com/xDaryamo/tosca-community-contributions/refs/heads/master/profiles/org/oasis-open/simple/2.0/profile.yaml
@@ -28,7 +28,7 @@ service_template:
       type: tosca:Size
       # This property is required and doesn't have "default" (or "value"),
       # So you *must* specify it in the CLI:
-      #   puccini-tosca --input ram=1gib ...
+      #   puccini-tosca --input ram=1 gib ...
       # (The inputs are in JSON format, which you'll need if you're using a complex data type)
 
   node_templates:
