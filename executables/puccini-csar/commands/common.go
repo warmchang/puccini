@@ -3,8 +3,8 @@ package commands
 import (
 	"github.com/tliron/commonlog"
 	"github.com/tliron/exturl"
+	"github.com/tliron/go-kutil/util"
 	"github.com/tliron/go-transcribe"
-	"github.com/tliron/kutil/util"
 )
 
 const toolName = "puccini-csar"

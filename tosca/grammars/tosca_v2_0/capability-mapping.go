@@ -1,7 +1,7 @@
 package tosca_v2_0
 
 import (
-	"github.com/tliron/puccini/tosca/parsing"
+	"github.com/tliron/go-puccini/tosca/parsing"
 )
 
 //
@@ -20,8 +20,8 @@ type CapabilityMapping struct {
 	*Entity `name:"capability mapping"`
 	Name    string
 
-	NodeTemplateName             *string
-	NodeTemplateCapabilityName   *string
+	NodeTemplateName           *string
+	NodeTemplateCapabilityName *string
 
 	NodeTemplate *NodeTemplate         `traverse:"ignore" json:"-" yaml:"-"`
 	Capability   *CapabilityAssignment `traverse:"ignore" json:"-" yaml:"-"`

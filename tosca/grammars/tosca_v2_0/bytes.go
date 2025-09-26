@@ -1,8 +1,8 @@
 package tosca_v2_0
 
 import (
-	"github.com/tliron/kutil/util"
-	"github.com/tliron/puccini/tosca/parsing"
+	"github.com/tliron/go-kutil/util"
+	"github.com/tliron/go-puccini/tosca/parsing"
 )
 
 //

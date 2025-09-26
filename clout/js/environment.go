@@ -11,8 +11,8 @@ import (
 	"github.com/tliron/commonjs-goja/api"
 	"github.com/tliron/commonlog"
 	"github.com/tliron/exturl"
-	"github.com/tliron/kutil/terminal"
-	cloutpkg "github.com/tliron/puccini/clout"
+	"github.com/tliron/go-kutil/terminal"
+	cloutpkg "github.com/tliron/go-puccini/clout"
 )
 
 //

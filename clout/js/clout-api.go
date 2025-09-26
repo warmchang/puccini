@@ -11,7 +11,7 @@ import (
 	"github.com/tliron/commonjs-goja"
 	"github.com/tliron/exturl"
 	"github.com/tliron/go-ard"
-	cloutpkg "github.com/tliron/puccini/clout"
+	cloutpkg "github.com/tliron/go-puccini/clout"
 	"github.com/vmihailenco/msgpack/v5"
 )
 

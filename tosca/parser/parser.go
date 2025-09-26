@@ -3,8 +3,8 @@ package parser
 import (
 	"sync"
 
-	"github.com/tliron/kutil/reflection"
-	"github.com/tliron/kutil/util"
+	"github.com/tliron/go-kutil/reflection"
+	"github.com/tliron/go-kutil/util"
 )
 
 //

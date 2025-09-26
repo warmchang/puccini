@@ -13,14 +13,14 @@ go get -u golang.org/x/tools/cmd/godoc
 cd "$ROOT"
 
 rm --recursive --force "$WORK"
-mkdir --parents "$WORK/src/github.com/tliron/puccini"
+mkdir --parents "$WORK/src/github.com/tliron/go-puccini"
 cp --recursive . "$WORK/"
 
-echo "http://localhost:$PORT/pkg/github.com/tliron/puccini/"
+echo "http://localhost:$PORT/pkg/github.com/tliron/go-puccini/"
 
 "$GOPATH/bin/godoc" -http=":$PORT" -goroot="$WORK"
 
-#"$GOPATH/bin/godoc" -goroot="$WORK" -url="/pkg/github.com/tliron/puccini/"
+#"$GOPATH/bin/godoc" -goroot="$WORK" -url="/pkg/github.com/tliron/go-puccini/"
 
 exit
 
@@ -40,7 +40,7 @@ cat << EOT > "$DOCS/index.html"
 <div class="container">
 EOT
 
-"$GOPATH/bin/godoc" -goroot="$GOPATH" -html=github.com/tliron/puccini/tosca >> "$DOCS/index.html"
+"$GOPATH/bin/godoc" -goroot="$GOPATH" -html=github.com/tliron/go-puccini/tosca >> "$DOCS/index.html"
 
 cat << EOT >> "$DOCS/index.html"
 </div>

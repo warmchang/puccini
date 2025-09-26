@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/tliron/go-ard"
-	"github.com/tliron/puccini/tosca/parsing"
+	"github.com/tliron/go-puccini/tosca/parsing"
 )
 
 // See the Timestamp Language-Independent Type for YAML Version 1.1 (Working Draft 2005-01-18)

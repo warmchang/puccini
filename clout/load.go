@@ -5,7 +5,7 @@ import (
 
 	"github.com/tliron/commonlog"
 	"github.com/tliron/exturl"
-	"github.com/tliron/kutil/util"
+	"github.com/tliron/go-kutil/util"
 )
 
 func Load(context contextpkg.Context, url exturl.URL, forceFormat string) (*Clout, error) {

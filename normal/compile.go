@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/tliron/go-ard"
-	cloutpkg "github.com/tliron/puccini/clout"
-	"github.com/tliron/puccini/clout/js"
-	"github.com/tliron/puccini/tosca/parsing"
+	cloutpkg "github.com/tliron/go-puccini/clout"
+	"github.com/tliron/go-puccini/clout/js"
+	"github.com/tliron/go-puccini/tosca/parsing"
 )
 
 var emptyMap = make(ard.StringMap)

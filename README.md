@@ -1,12 +1,12 @@
-**Notice: This repository is in maintenance mode. Development is proceeding in [rust-puccini](https://github.com/tliron/rust-puccini).**
+**Notice: This repository is in maintenance mode. Development has moved to the Rust language and is proceeding in the [main repository](https://github.com/tliron/puccini).**
 
 Puccini
 =======
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Latest Release](https://img.shields.io/github/release/tliron/puccini.svg)](https://github.com/tliron/puccini/releases/latest)
-[![Go Reference](https://pkg.go.dev/badge/github.com/tliron/puccini.svg)](https://pkg.go.dev/github.com/tliron/puccini)
-[![Go Report Card](https://goreportcard.com/badge/github.com/tliron/puccini)](https://goreportcard.com/report/github.com/tliron/puccini)
+[![Latest Release](https://img.shields.io/github/release/tliron/go-puccini.svg)](https://github.com/tliron/go-puccini/releases/latest)
+[![Go Reference](https://pkg.go.dev/badge/github.com/tliron/go-puccini.svg)](https://pkg.go.dev/github.com/tliron/go-puccini)
+[![Go Report Card](https://goreportcard.com/badge/github.com/tliron/go-puccini)](https://goreportcard.com/report/github.com/tliron/go-puccini)
 
 Cloud topology management and deployment tools based on
 [TOSCA](https://www.oasis-open.org/committees/tosca/).
@@ -35,14 +35,14 @@ Puccini is also available as a [GitHub action](https://github.com/marketplace/ac
 allowing you to validate and otherwise use TOSCA in your git workflow.
 
 For a TOSCA development environment, check out the
-[TOSCA Visual Studio Code Extension](https://github.com/tliron/puccini-vscode/), which is based
+[TOSCA Visual Studio Code Extension](https://github.com/tliron/go-puccini-vscode/), which is based
 on Puccini (work in progress).
 
 
 Get It
 ------
 
-[![Download](assets/media/download.png "Download")](https://github.com/tliron/puccini/releases)
+[![Download](assets/media/download.png "Download")](https://github.com/tliron/go-puccini/releases)
 
 To build Puccini yourself see the [build guide](scripts/).
 
@@ -66,7 +66,7 @@ included wrappers and examples for [Java](wrappers/java/), [Python](wrappers/pyt
 
 Puccini can parse all versions of TOSCA:
 
-* [TOSCA 2.0](http://docs.oasis-open.org/tosca/TOSCA/v2.0/TOSCA-v2.0.html) (in progress)
+* [TOSCA 2.0](http://docs.oasis-open.org/tosca/TOSCA/v2.0/TOSCA-v2.0.html)
 * [TOSCA 1.3](https://docs.oasis-open.org/tosca/TOSCA-Simple-Profile-YAML/v1.3/TOSCA-Simple-Profile-YAML-v1.3.html)
 * [TOSCA 1.2](https://docs.oasis-open.org/tosca/TOSCA-Simple-Profile-YAML/v1.2/TOSCA-Simple-Profile-YAML-v1.2.html)
 * [TOSCA 1.1](https://docs.oasis-open.org/tosca/TOSCA-Simple-Profile-YAML/v1.1/TOSCA-Simple-Profile-YAML-v1.1.html)

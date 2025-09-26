@@ -2,10 +2,10 @@ package tosca_v1_1
 
 import (
 	"github.com/tliron/commonlog"
-	"github.com/tliron/puccini/tosca/grammars/tosca_v1_2"
-	"github.com/tliron/puccini/tosca/grammars/tosca_v1_3"
-	"github.com/tliron/puccini/tosca/grammars/tosca_v2_0"
-	"github.com/tliron/puccini/tosca/parsing"
+	"github.com/tliron/go-puccini/tosca/grammars/tosca_v1_2"
+	"github.com/tliron/go-puccini/tosca/grammars/tosca_v1_3"
+	"github.com/tliron/go-puccini/tosca/grammars/tosca_v2_0"
+	"github.com/tliron/go-puccini/tosca/parsing"
 )
 
 var log = commonlog.GetLogger("puccini.grammars.tosca_v1_1")
@@ -23,10 +23,10 @@ func init() {
 	Grammar.RegisterReader("Artifact", tosca_v1_2.ReadArtifact)                     // 1.2
 	Grammar.RegisterReader("ArtifactDefinition", tosca_v1_2.ReadArtifactDefinition) // 1.2
 	Grammar.RegisterReader("ArtifactType", tosca_v2_0.ReadArtifactType)
-	Grammar.RegisterReader("AttributeDefinition", ReadAttributeDefinition) // override
+	Grammar.RegisterReader("AttributeDefinition", ReadAttributeDefinition)              // override
 	Grammar.RegisterReader("AttributeValue", tosca_v1_3.ReadAttributeValue)             // 1.3
 	Grammar.RegisterReader("CapabilityAssignment", tosca_v1_2.ReadCapabilityAssignment) // 1.2
-	Grammar.RegisterReader("CapabilityDefinition", ReadCapabilityDefinition) // override
+	Grammar.RegisterReader("CapabilityDefinition", ReadCapabilityDefinition)            // override
 	Grammar.RegisterReader("CapabilityFilter", tosca_v2_0.ReadCapabilityFilter)
 	Grammar.RegisterReader("CapabilityMapping", tosca_v2_0.ReadCapabilityMapping)
 	Grammar.RegisterReader("CapabilityType", tosca_v2_0.ReadCapabilityType)
@@ -67,7 +67,7 @@ func init() {
 	Grammar.RegisterReader("scalar-unit.frequency", tosca_v1_3.ReadScalarUnitFrequency)
 	Grammar.RegisterReader("scalar-unit.size", tosca_v1_3.ReadScalarUnitSize)
 	Grammar.RegisterReader("scalar-unit.time", tosca_v1_3.ReadScalarUnitTime)
-	Grammar.RegisterReader("Schema", tosca_v1_2.ReadSchema) // 1.2
+	Grammar.RegisterReader("Schema", tosca_v1_2.ReadSchema)                  // 1.2
 	Grammar.RegisterReader("SubstitutionMappings", ReadSubstitutionMappings) // override
 	Grammar.RegisterReader("timestamp", tosca_v2_0.ReadTimestamp)
 	Grammar.RegisterReader("TriggerDefinition", tosca_v1_2.ReadTriggerDefinition) // 1.2

@@ -4,8 +4,8 @@ import (
 	"github.com/dop251/goja"
 	"github.com/tliron/commonjs-goja"
 	"github.com/tliron/exturl"
-	problemspkg "github.com/tliron/kutil/problems"
-	cloutpkg "github.com/tliron/puccini/clout"
+	problemspkg "github.com/tliron/go-kutil/problems"
+	cloutpkg "github.com/tliron/go-puccini/clout"
 )
 
 //

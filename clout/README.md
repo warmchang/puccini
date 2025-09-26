@@ -3,7 +3,7 @@ Clout
 
 Introducing the **clou**d **t**opology ("clou" + "t") representation language, which is, simply put,
 a straightforward and rather generic graph database stored as
-["agnostic raw data"](https://github.com/tliron/kutil/tree/master/ard/), in YAML, JSON, XML, or CBOR.
+["agnostic raw data"](https://github.com/tliron/go-kutil/tree/master/ard/), in YAML, JSON, XML, or CBOR.
 By default it will be in YAML.
 
 Clout functions as the intermediary format for your deployments. As an analogy, consider a program

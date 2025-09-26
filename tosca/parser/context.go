@@ -6,11 +6,11 @@ import (
 
 	"github.com/tliron/exturl"
 	"github.com/tliron/go-ard"
-	"github.com/tliron/kutil/problems"
-	"github.com/tliron/kutil/terminal"
-	"github.com/tliron/kutil/util"
-	"github.com/tliron/puccini/tosca/grammars"
-	"github.com/tliron/puccini/tosca/parsing"
+	"github.com/tliron/go-kutil/problems"
+	"github.com/tliron/go-kutil/terminal"
+	"github.com/tliron/go-kutil/util"
+	"github.com/tliron/go-puccini/tosca/grammars"
+	"github.com/tliron/go-puccini/tosca/parsing"
 )
 
 //

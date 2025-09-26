@@ -57,7 +57,7 @@ This runs `build` and then some tests using Go's built-in testing tool.
 
 This script installs and runs the amazing [GoReleaser](https://goreleaser.com/) tool in order to
 cross-compile Puccini, create installation packages for Linux, Windows, and MacOS, and publish them
-to [GitHub](https://github.com/tliron/puccini/releases). It uses the
+to [GitHub](https://github.com/tliron/go-puccini/releases). It uses the
 [.goreleaser.yml](../.goreleaser.yml) file for its configuration.
 
 Run it with the "-t" switch to do a test release, which will create local distributions (under

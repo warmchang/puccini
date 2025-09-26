@@ -3,16 +3,16 @@ package grammars
 import (
 	"fmt"
 
-	"github.com/tliron/puccini/tosca/grammars/cloudify_v1_3"
-	"github.com/tliron/puccini/tosca/grammars/hot"
-	"github.com/tliron/puccini/tosca/grammars/tosca_v1_0"
-	"github.com/tliron/puccini/tosca/grammars/tosca_v1_1"
-	"github.com/tliron/puccini/tosca/grammars/tosca_v1_2"
-	"github.com/tliron/puccini/tosca/grammars/tosca_v1_3"
-	"github.com/tliron/puccini/tosca/grammars/tosca_v2_0"
-	"github.com/tliron/puccini/tosca/parsing"
+	"github.com/tliron/go-puccini/tosca/grammars/cloudify_v1_3"
+	"github.com/tliron/go-puccini/tosca/grammars/hot"
+	"github.com/tliron/go-puccini/tosca/grammars/tosca_v1_0"
+	"github.com/tliron/go-puccini/tosca/grammars/tosca_v1_1"
+	"github.com/tliron/go-puccini/tosca/grammars/tosca_v1_2"
+	"github.com/tliron/go-puccini/tosca/grammars/tosca_v1_3"
+	"github.com/tliron/go-puccini/tosca/grammars/tosca_v2_0"
+	"github.com/tliron/go-puccini/tosca/parsing"
 
-	_ "github.com/tliron/puccini/assets/tosca/profiles"
+	_ "github.com/tliron/go-puccini/assets/tosca/profiles"
 )
 
 func init() {

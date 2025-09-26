@@ -5,7 +5,7 @@ import (
 	"embed"
 
 	"github.com/tliron/exturl"
-	"github.com/tliron/kutil/util"
+	"github.com/tliron/go-kutil/util"
 )
 
 //go:embed cloudify/* common/* hot/* implicit/* simple/* simple-for-nfv/*

@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/tliron/puccini/tosca/parsing"
+	"github.com/tliron/go-puccini/tosca/parsing"
 )
 
 func (self *Context) Gather(pattern string) parsing.EntityPtrs {

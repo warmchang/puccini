@@ -4,9 +4,9 @@ import (
 	"sync"
 
 	"github.com/tliron/go-ard"
-	"github.com/tliron/puccini/normal"
-	"github.com/tliron/puccini/tosca/grammars/tosca_v2_0"
-	"github.com/tliron/puccini/tosca/parsing"
+	"github.com/tliron/go-puccini/normal"
+	"github.com/tliron/go-puccini/tosca/grammars/tosca_v2_0"
+	"github.com/tliron/go-puccini/tosca/parsing"
 )
 
 //

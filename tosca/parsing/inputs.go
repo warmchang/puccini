@@ -2,7 +2,7 @@ package parsing
 
 import (
 	"github.com/tliron/go-ard"
-	"github.com/tliron/kutil/reflection"
+	"github.com/tliron/go-kutil/reflection"
 )
 
 //

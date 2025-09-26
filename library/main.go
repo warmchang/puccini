@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/tliron/kutil/util"
+	"github.com/tliron/go-kutil/util"
 
 	_ "github.com/tliron/commonlog/simple"
 )

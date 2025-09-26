@@ -1,8 +1,8 @@
 package parser
 
 import (
-	"github.com/tliron/kutil/terminal"
-	"github.com/tliron/puccini/tosca/parsing"
+	"github.com/tliron/go-kutil/terminal"
+	"github.com/tliron/go-puccini/tosca/parsing"
 )
 
 func (self *Context) AddNamespaces() {

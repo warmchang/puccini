@@ -6,8 +6,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/tliron/kutil/reflection"
-	"github.com/tliron/kutil/terminal"
+	"github.com/tliron/go-kutil/reflection"
+	"github.com/tliron/go-kutil/terminal"
 )
 
 type NameTransformer = func(string, EntityPtr) []string

@@ -1,7 +1,7 @@
 Puccini Tutorial
 ================
 
-[Download and install Puccini](https://github.com/tliron/puccini/releases).
+[Download and install Puccini](https://github.com/tliron/go-puccini/releases).
 
 The distribution comes with three executables:
 
@@ -32,7 +32,7 @@ Puccini also supports relative URLs in TOSCA artifacts (their `file` keyword).
 We can also compile directly from a URL. Let's use the same OpenStack example as
 above, but point to it on the web:
 
-    puccini-tosca compile https://raw.githubusercontent.com/tliron/puccini/main/examples/openstack/hello-world.yaml
+    puccini-tosca compile https://raw.githubusercontent.com/tliron/go-puccini/main/examples/openstack/hello-world.yaml
 
 You'll see that the relative URLs continue to work as expected even though the base
 URL is not on the local filesystem.
@@ -42,7 +42,7 @@ Any valid git repository URL can follow the "git:" prefix, then follow with a "!
 path within the repository. Also note that in bash you need to escape the "!" character
 or wrap it in single quotes:
 
-    puccini-tosca compile 'git:https://github.com/tliron/puccini.git!examples/openstack/hello-world.yaml'
+    puccini-tosca compile 'git:https://github.com/tliron/go-puccini.git!examples/openstack/hello-world.yaml'
 
 Puccini can also compile YAML from stdin:
 
@@ -345,7 +345,7 @@ Controlling the Output
 ----------------------
 
 The default output format is YAML but other formats are supported: JSON (and
-[ARD](https://github.com/tliron/kutil/tree/master/ard/)-compatible extended JSON), XML,
+[ARD](https://github.com/tliron/go-kutil/tree/master/ard/)-compatible extended JSON), XML,
 CBOR, and MessagePack. Here's ARD-compatible XJSON:
 
     puccini-tosca compile examples/1.3/descriptions.yaml --format=xjson

@@ -2,7 +2,7 @@ package util
 
 import (
 	"github.com/tliron/go-ard"
-	cloutpkg "github.com/tliron/puccini/clout"
+	cloutpkg "github.com/tliron/go-puccini/clout"
 )
 
 func IsTosca(metadata ard.Value, kind string) bool {

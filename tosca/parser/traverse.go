@@ -2,8 +2,8 @@ package parser
 
 import (
 	"github.com/tliron/commonlog"
-	"github.com/tliron/kutil/reflection"
-	"github.com/tliron/puccini/tosca/parsing"
+	"github.com/tliron/go-kutil/reflection"
+	"github.com/tliron/go-puccini/tosca/parsing"
 )
 
 func (self *Context) TraverseEntities(log commonlog.Logger, work reflection.EntityWork, traverse reflection.EntityTraverser) {

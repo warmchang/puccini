@@ -2,7 +2,7 @@ package hot
 
 import (
 	"github.com/tliron/go-ard"
-	"github.com/tliron/puccini/tosca/parsing"
+	"github.com/tliron/go-puccini/tosca/parsing"
 	"github.com/tliron/yamlkeys"
 )
 

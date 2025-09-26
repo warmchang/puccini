@@ -2,9 +2,9 @@ package tosca_v2_0
 
 import (
 	"fmt"
-	
-	"github.com/tliron/puccini/normal"
-	"github.com/tliron/puccini/tosca/parsing"
+
+	"github.com/tliron/go-puccini/normal"
+	"github.com/tliron/go-puccini/tosca/parsing"
 )
 
 //
@@ -166,7 +166,7 @@ func (self *NodeTemplate) normalizeInstance(normalServiceTemplate *normal.Servic
 
 	// Normalize requirements and update their paths to reflect the instance name
 	self.Requirements.Normalize(self, normalNodeTemplate)
-	
+
 	// Update requirement paths to reflect the correct instance name
 	if instanceName != self.Name {
 		for _, requirement := range normalNodeTemplate.Requirements {

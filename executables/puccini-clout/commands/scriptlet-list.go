@@ -8,10 +8,10 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/tliron/exturl"
 	"github.com/tliron/go-ard"
-	"github.com/tliron/kutil/terminal"
-	"github.com/tliron/kutil/util"
-	cloutpkg "github.com/tliron/puccini/clout"
-	"github.com/tliron/puccini/clout/js"
+	"github.com/tliron/go-kutil/terminal"
+	"github.com/tliron/go-kutil/util"
+	cloutpkg "github.com/tliron/go-puccini/clout"
+	"github.com/tliron/go-puccini/clout/js"
 )
 
 func init() {

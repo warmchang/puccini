@@ -7,8 +7,8 @@ import (
 
 	"github.com/tliron/exturl"
 	"github.com/tliron/go-ard"
-	"github.com/tliron/kutil/problems"
-	"github.com/tliron/kutil/terminal"
+	"github.com/tliron/go-kutil/problems"
+	"github.com/tliron/go-kutil/terminal"
 )
 
 func (self *Context) ReportURL(skip int, item string, message string, row int, column int) bool {

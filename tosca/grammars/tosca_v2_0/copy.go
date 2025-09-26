@@ -2,7 +2,7 @@ package tosca_v2_0
 
 import (
 	"github.com/tliron/go-ard"
-	"github.com/tliron/puccini/tosca/parsing"
+	"github.com/tliron/go-puccini/tosca/parsing"
 )
 
 // Implements the "copy" feature for node templates and relationship templates

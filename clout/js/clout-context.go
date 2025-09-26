@@ -2,7 +2,7 @@ package js
 
 import (
 	"github.com/tliron/commonjs-goja"
-	cloutpkg "github.com/tliron/puccini/clout"
+	cloutpkg "github.com/tliron/go-puccini/clout"
 )
 
 //

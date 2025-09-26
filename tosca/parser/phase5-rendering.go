@@ -1,7 +1,7 @@
 package parser
 
 import (
-	"github.com/tliron/puccini/tosca/parsing"
+	"github.com/tliron/go-puccini/tosca/parsing"
 )
 
 func (self *Context) Render() parsing.EntityPtrs {

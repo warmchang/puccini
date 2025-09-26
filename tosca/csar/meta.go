@@ -11,7 +11,7 @@ import (
 
 	"github.com/tliron/commonlog"
 	"github.com/tliron/exturl"
-	"github.com/tliron/kutil/util"
+	"github.com/tliron/go-kutil/util"
 )
 
 const TOSCA_META_PATH = "TOSCA-Metadata/TOSCA.meta"

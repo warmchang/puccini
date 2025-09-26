@@ -1,7 +1,7 @@
 package parser
 
 import (
-	"github.com/tliron/puccini/normal"
+	"github.com/tliron/go-puccini/normal"
 )
 
 func (self *Context) Normalize() (*normal.ServiceTemplate, bool) {

@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
 
   s.summary               = 'Puccini'
   s.description           = 'Deliberately stateless cloud topology management and deployment tools based on TOSCA'
-  s.homepage              = 'https://github.com/tliron/puccini'
+  s.homepage              = 'https://github.com/tliron/go-puccini'
   s.license               = 'Apache-2.0'
 
   s.authors               = ['Tal Liron']

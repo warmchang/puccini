@@ -1,7 +1,7 @@
 package hot
 
 import (
-	"github.com/tliron/puccini/tosca/parsing"
+	"github.com/tliron/go-puccini/tosca/parsing"
 )
 
 //

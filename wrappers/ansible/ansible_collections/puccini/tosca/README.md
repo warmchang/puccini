@@ -25,4 +25,4 @@ We currently enable two ways to consume TOSCA in Ansible:
 * Iterate over arbitrary TOSCA nodes using our custom task `puccini.tosca.compile`
 * Use TOSCA nodes as an Ansible inventory, via our custom inventory plugin `puccini.tosca.nodes`
 
-See the [examples](https://github.com/tliron/puccini/tree/main/examples/ansible).
+See the [examples](https://github.com/tliron/go-puccini/tree/main/examples/ansible).

@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/tliron/go-ard"
-	"github.com/tliron/puccini/tosca/parsing"
+	"github.com/tliron/go-puccini/tosca/parsing"
 )
 
 //
@@ -27,12 +27,12 @@ type AttributeMapping struct {
 	AttributeName *string
 
 	// TOSCA 2.0 - Capability attribute mapping
-	CapabilityName        *string
+	CapabilityName          *string
 	CapabilityAttributeName *string
 
 	// TOSCA 2.0 - Relationship attribute mapping
-	RequirementName         *string
-	RelationshipIndex       *int // nil means 0, -1 means ALL
+	RequirementName           *string
+	RelationshipIndex         *int // nil means 0, -1 means ALL
 	RelationshipAttributeName *string
 
 	// Deprecated TOSCA 1.x fields

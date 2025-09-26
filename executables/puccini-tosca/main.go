@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/tliron/kutil/util"
-	"github.com/tliron/puccini/executables/puccini-tosca/commands"
+	"github.com/tliron/go-kutil/util"
+	"github.com/tliron/go-puccini/executables/puccini-tosca/commands"
 
 	_ "github.com/tliron/commonlog/simple"
 )

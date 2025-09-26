@@ -8,13 +8,13 @@ import (
 
 	"github.com/tliron/exturl"
 	"github.com/tliron/go-ard"
+	"github.com/tliron/go-kutil/problems"
+	cloutpkg "github.com/tliron/go-puccini/clout"
+	"github.com/tliron/go-puccini/clout/js"
+	"github.com/tliron/go-puccini/normal"
+	parserpkg "github.com/tliron/go-puccini/tosca/parser"
+	"github.com/tliron/go-puccini/tosca/parsing"
 	"github.com/tliron/go-transcribe"
-	"github.com/tliron/kutil/problems"
-	cloutpkg "github.com/tliron/puccini/clout"
-	"github.com/tliron/puccini/clout/js"
-	"github.com/tliron/puccini/normal"
-	parserpkg "github.com/tliron/puccini/tosca/parser"
-	"github.com/tliron/puccini/tosca/parsing"
 	"github.com/tliron/yamlkeys"
 )
 

@@ -1,8 +1,8 @@
 package normal
 
 import (
-	"github.com/tliron/kutil/reflection"
-	"github.com/tliron/puccini/tosca/parsing"
+	"github.com/tliron/go-kutil/reflection"
+	"github.com/tliron/go-puccini/tosca/parsing"
 )
 
 //

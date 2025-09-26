@@ -2,7 +2,7 @@ package tosca_v2_0
 
 import (
 	"github.com/tliron/go-ard"
-	"github.com/tliron/puccini/tosca/parsing"
+	"github.com/tliron/go-puccini/tosca/parsing"
 )
 
 //
@@ -75,14 +75,14 @@ func (self *CapabilityDefinition) Inherit(parentDefinition *CapabilityDefinition
 	if ((self.Description == nil) || ((self.CapabilityType != nil) && (self.Description == self.CapabilityType.Description))) && (parentDefinition.Description != nil) {
 		self.Description = parentDefinition.Description
 	}
-	
+
 	// For capability refinement: inherit type if not specified
 	if (self.CapabilityTypeName == nil) && (parentDefinition.CapabilityTypeName != nil) {
 		self.CapabilityTypeName = parentDefinition.CapabilityTypeName
 		// Mark this as inherited so render() knows not to complain
 		self.typeMissingProblemReported = true
 	}
-	
+
 	if (self.ValidSourceNodeTypeNames == nil) && (parentDefinition.ValidSourceNodeTypeNames != nil) {
 		self.ValidSourceNodeTypeNames = parentDefinition.ValidSourceNodeTypeNames
 	}

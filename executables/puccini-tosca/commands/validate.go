@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/tliron/kutil/terminal"
-	"github.com/tliron/kutil/util"
+	"github.com/tliron/go-kutil/terminal"
+	"github.com/tliron/go-kutil/util"
 )
 
 var (

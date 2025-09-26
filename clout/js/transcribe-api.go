@@ -7,8 +7,8 @@ import (
 
 	"github.com/tliron/commonjs-goja"
 	"github.com/tliron/commonjs-goja/api"
+	"github.com/tliron/go-kutil/terminal"
 	"github.com/tliron/go-transcribe"
-	"github.com/tliron/kutil/terminal"
 )
 
 // ([commonjs.CreateExtensionFunc] signature)

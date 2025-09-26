@@ -1,8 +1,8 @@
 package tosca_v1_1
 
 import (
-	"github.com/tliron/puccini/tosca/grammars/tosca_v1_2"
-	"github.com/tliron/puccini/tosca/parsing"
+	"github.com/tliron/go-puccini/tosca/grammars/tosca_v1_2"
+	"github.com/tliron/go-puccini/tosca/parsing"
 )
 
 //

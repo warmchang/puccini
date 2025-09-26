@@ -13,7 +13,7 @@ The latest stable version is published on [PyPI](https://pypi.org/project/puccin
 
 To install from source:
 
-    git clone https://github.com/tliron/puccini.git
+    git clone https://github.com/tliron/go-puccini.git
     cd puccini
     scripts/build-wrapper-python -e
 

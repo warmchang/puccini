@@ -2,8 +2,8 @@ package normal
 
 import (
 	"strings"
-	
-	"github.com/tliron/puccini/tosca/parsing"
+
+	"github.com/tliron/go-puccini/tosca/parsing"
 )
 
 //

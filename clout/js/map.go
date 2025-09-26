@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/tliron/go-ard"
-	"github.com/tliron/kutil/util"
+	"github.com/tliron/go-kutil/util"
 )
 
 func (self *ExecutionContext) NewMapValue(list ard.List, notation ard.StringMap, meta ard.StringMap) (*Value, error) {

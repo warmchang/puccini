@@ -4,7 +4,7 @@ import (
 	"reflect"
 
 	"github.com/tliron/go-ard"
-	"github.com/tliron/kutil/reflection"
+	"github.com/tliron/go-kutil/reflection"
 )
 
 func (self *Context) ValidateUnsupportedFields(keys []string) {

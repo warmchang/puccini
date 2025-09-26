@@ -5,10 +5,10 @@ import (
 
 	"github.com/tliron/commonlog"
 	"github.com/tliron/exturl"
+	problemspkg "github.com/tliron/go-kutil/problems"
+	"github.com/tliron/go-kutil/terminal"
+	"github.com/tliron/go-kutil/util"
 	"github.com/tliron/go-transcribe"
-	problemspkg "github.com/tliron/kutil/problems"
-	"github.com/tliron/kutil/terminal"
-	"github.com/tliron/kutil/util"
 )
 
 const toolName = "puccini-tosca"

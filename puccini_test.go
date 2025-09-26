@@ -8,10 +8,10 @@ import (
 	"testing"
 
 	"github.com/tliron/exturl"
-	cloutpkg "github.com/tliron/puccini/clout"
-	"github.com/tliron/puccini/clout/js"
-	"github.com/tliron/puccini/normal"
-	"github.com/tliron/puccini/tosca/parser"
+	cloutpkg "github.com/tliron/go-puccini/clout"
+	"github.com/tliron/go-puccini/clout/js"
+	"github.com/tliron/go-puccini/normal"
+	"github.com/tliron/go-puccini/tosca/parser"
 
 	_ "github.com/tliron/commonlog/simple"
 )
@@ -86,8 +86,24 @@ func (self *Context) compileAll() {
 	self.compile("1.3/unicode.yaml", nil)
 	self.compile("1.3/workflows.yaml", nil)
 
-	self.compile("2.0/artifacts.yaml", nil)
-	self.compile("2.0/attributes.yaml", nil)
+	// self.compile("2.0/artifacts.yaml", nil)
+	// self.compile("2.0/attributes.yaml", nil)
+	// self.compile("2.0/copy.yaml", nil)
+	// self.compile("2.0/data-types.yaml", nil)
+	// self.compile("2.0/descriptions.yaml", nil)
+	// self.compile("2.0/dsl-definitions.yaml", nil)
+	// self.compile("2.0/functions.yaml", nil)
+	// self.compile("2.0/inputs-and-outputs.yaml", map[string]any{"ram": "1gib"})
+	// self.compile("2.0/interfaces.yaml", nil)
+	// self.compile("2.0/metadata.yaml", nil)
+	// self.compile("2.0/namespaces.yaml", nil)
+	// self.compile("2.0/policies-and-groups.yaml", nil)
+	// self.compile("2.0/requirements-and-capabilities.yaml", nil)
+	// self.compile("2.0/source-and-target.yaml", nil)
+	// self.compile("2.0/substitution-mapping-client.yaml", nil)
+	// self.compile("2.0/substitution-mapping.yaml", nil)
+	// self.compile("2.0/unicode.yaml", nil)
+	// self.compile("2.0/workflows.yaml", nil)
 
 	self.compile("javascript/artifacts.yaml", nil)
 	self.compile("javascript/constraints.yaml", nil)

@@ -4,7 +4,7 @@ import (
 	contextpkg "context"
 	"errors"
 
-	"github.com/tliron/puccini/normal"
+	"github.com/tliron/go-puccini/normal"
 )
 
 func (self *Context) Parse(context contextpkg.Context) (*normal.ServiceTemplate, error) {

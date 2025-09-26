@@ -8,7 +8,7 @@ import (
 	"strconv"
 
 	"github.com/tliron/go-ard"
-	"github.com/tliron/puccini/tosca/parsing"
+	"github.com/tliron/go-puccini/tosca/parsing"
 )
 
 var ScalarUnitTypeZeroes = map[ard.TypeName]ard.Value{

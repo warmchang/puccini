@@ -30,7 +30,7 @@ cd "{root}/puccini/go-source/library"
     -buildmode=c-shared \
     -o=../../libpuccini.so \
     -ldflags " \
-        -X 'github.com/tliron/kutil/version.GitVersion={version}'"
+        -X 'github.com/tliron/go-kutil/version.GitVersion={version}'"
 '''.format(root=root, version=version, go_version=go_version)
 
 t = tempfile.mkdtemp()
@@ -55,8 +55,8 @@ setuptools.setup(
   license='Apache License 2.0',
   author='Tal Liron',
   author_email='tal.liron@gmail.com',
-  url='https://github.com/tliron/puccini',
-  download_url='https://github.com/tliron/puccini/releases',
+  url='https://github.com/tliron/go-puccini',
+  download_url='https://github.com/tliron/go-puccini/releases',
   classifiers=(
     'Development Status :: 4 - Beta',
     'Intended Audience :: Developers',

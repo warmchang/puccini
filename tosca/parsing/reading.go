@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/tliron/go-ard"
-	"github.com/tliron/kutil/reflection"
+	"github.com/tliron/go-kutil/reflection"
 	"github.com/tliron/yamlkeys"
 )
 

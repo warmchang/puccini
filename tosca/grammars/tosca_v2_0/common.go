@@ -4,7 +4,7 @@ import (
 	"reflect"
 
 	"github.com/tliron/commonlog"
-	"github.com/tliron/puccini/tosca/parsing"
+	"github.com/tliron/go-puccini/tosca/parsing"
 )
 
 var log = commonlog.GetLogger("puccini.grammars.tosca_v2_0")

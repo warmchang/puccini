@@ -6,11 +6,11 @@ import (
 	"sort"
 
 	"github.com/tliron/exturl"
-	"github.com/tliron/kutil/reflection"
-	"github.com/tliron/kutil/util"
-	"github.com/tliron/puccini/tosca/csar"
-	"github.com/tliron/puccini/tosca/grammars"
-	"github.com/tliron/puccini/tosca/parsing"
+	"github.com/tliron/go-kutil/reflection"
+	"github.com/tliron/go-kutil/util"
+	"github.com/tliron/go-puccini/tosca/csar"
+	"github.com/tliron/go-puccini/tosca/grammars"
+	"github.com/tliron/go-puccini/tosca/parsing"
 	"github.com/tliron/yamlkeys"
 )
 

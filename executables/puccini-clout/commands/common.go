@@ -5,10 +5,10 @@ import (
 
 	"github.com/tliron/commonlog"
 	"github.com/tliron/exturl"
+	"github.com/tliron/go-kutil/util"
+	"github.com/tliron/go-puccini/clout"
+	cloutpkg "github.com/tliron/go-puccini/clout"
 	"github.com/tliron/go-transcribe"
-	"github.com/tliron/kutil/util"
-	"github.com/tliron/puccini/clout"
-	cloutpkg "github.com/tliron/puccini/clout"
 )
 
 const toolName = "puccini-clout"

@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/tliron/go-ard"
-	"github.com/tliron/puccini/tosca/parsing"
+	"github.com/tliron/go-puccini/tosca/parsing"
 )
 
 var VersionRE = regexp.MustCompile(
@@ -47,11 +47,11 @@ func ReadVersion(context *parsing.Context) parsing.EntityPtr {
 		if context.Is(ard.TypeFloat) {
 			value := *context.ReadFloat()
 			self.OriginalString = strconv.FormatFloat(value, 'g', -1, 64)
-			if strings.Index(self.CanonicalString, "e") == -1 {
+			if !strings.Contains(self.CanonicalString, "e") {
 				context.ReportValueMalformed("version", "too many floating point digits")
 				return &self
 			}
-			if strings.Index(self.CanonicalString, ".") == -1 {
+			if !strings.Contains(self.CanonicalString, ".") {
 				// Assume minor version is 0
 				self.CanonicalString += ".0"
 			}

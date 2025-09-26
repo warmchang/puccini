@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/tliron/exturl"
-	"github.com/tliron/puccini/clout/js"
+	"github.com/tliron/go-puccini/clout/js"
 )
 
 func (self *Context) ImportScriptlet(name string, path string) {

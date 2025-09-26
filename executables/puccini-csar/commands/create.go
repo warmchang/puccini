@@ -13,8 +13,8 @@ import (
 	"github.com/klauspost/pgzip"
 	"github.com/spf13/cobra"
 	"github.com/tliron/exturl"
-	"github.com/tliron/kutil/util"
-	"github.com/tliron/puccini/tosca/csar"
+	"github.com/tliron/go-kutil/util"
+	"github.com/tliron/go-puccini/tosca/csar"
 )
 
 var (
