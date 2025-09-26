@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
+	"time"
 	"unicode"
 
 	"github.com/tliron/exturl"
@@ -122,7 +124,8 @@ func (self *Import) NewImportSpec(unit *File) (*parsing.ImportSpec, bool) {
 
 	bases = append(bases, self.Context.Bases...)
 
-	url, err := urlContext.NewValidAnyOrFileURL(context.TODO(), *self.URL, bases)
+	// Use cached URL creation with request deduplication to handle network issues
+	url, err := cachedURLCreation(urlContext, *self.URL, bases)
 	if err != nil {
 		self.Context.ReportError(err)
 		return nil, false
@@ -136,6 +139,78 @@ func (self *Import) NewImportSpec(unit *File) (*parsing.ImportSpec, bool) {
 		Implicit:        false,
 	}
 	return importSpec, true
+}
+
+// Mutex to synchronize URL creation to avoid race conditions in parallel tests
+var urlCreationMutex sync.Mutex
+
+// URL cache and request deduplication to handle network issues in parallel tests
+type urlRequest struct {
+	url    exturl.URL
+	err    error
+	done   chan struct{}
+	result *exturl.URL
+}
+
+var (
+	urlCache      = make(map[string]*urlRequest)
+	urlCacheMutex sync.Mutex
+)
+
+// ClearURLCache clears the URL cache - useful for tests
+func ClearURLCache() {
+	urlCacheMutex.Lock()
+	defer urlCacheMutex.Unlock()
+	urlCache = make(map[string]*urlRequest)
+}
+
+// cachedURLCreation handles URL creation with caching and request deduplication
+func cachedURLCreation(urlContext *exturl.Context, urlString string, bases []exturl.URL) (exturl.URL, error) {
+	// Create a cache key from the URL string and bases
+	cacheKey := urlString
+	for _, base := range bases {
+		cacheKey += "|" + base.String()
+	}
+
+	urlCacheMutex.Lock()
+
+	// Check if we already have a request for this URL
+	if req, exists := urlCache[cacheKey]; exists {
+		urlCacheMutex.Unlock()
+
+		// Wait for the existing request to complete
+		select {
+		case <-req.done:
+			if req.err != nil {
+				return nil, req.err
+			}
+			return *req.result, nil
+		case <-time.After(30 * time.Second):
+			return nil, fmt.Errorf("timeout waiting for URL resolution: %s", urlString)
+		}
+	}
+
+	// Create a new request
+	req := &urlRequest{
+		done: make(chan struct{}),
+	}
+	urlCache[cacheKey] = req
+	urlCacheMutex.Unlock()
+
+	// Perform the actual URL creation with extended timeout for external requests
+	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
+	defer cancel()
+
+	url, err := urlContext.NewValidAnyOrFileURL(ctx, urlString, bases)
+
+	// Store the result and notify waiters
+	req.err = err
+	if err == nil {
+		req.result = &url
+	}
+	close(req.done)
+
+	return url, err
 }
 
 // Known profiles registry
@@ -158,14 +233,14 @@ func (self *Import) newProfileImportSpec(profileName string) (*parsing.ImportSpe
 	// Create internal URL for profile (matches the pattern used in profiles.go)
 	profileInternalURL := "internal:/profiles/" + profileRelativePath
 
-	// Use the same URL context as regular imports
+	// Use the same URL context as regular imports for proper URL resolution
 	base := self.Context.URL.Base()
 	urlContext := base.Context()
 	bases := []exturl.URL{base}
 	bases = append(bases, self.Context.Bases...)
 
-	// Create URL using the internal URL path
-	profileURL, err := urlContext.NewValidAnyOrFileURL(context.TODO(), profileInternalURL, bases)
+	// Create URL using the internal URL path with caching and request deduplication
+	profileURL, err := cachedURLCreation(urlContext, profileInternalURL, bases)
 	if err != nil {
 		self.Context.ReportError(fmt.Errorf("failed to create profile URL for %q: %w", profileName, err))
 		return nil, false
