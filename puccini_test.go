@@ -2,6 +2,7 @@ package main
 
 import (
 	contextpkg "context"
+	"fmt"
 	"os"
 	"path"
 	"path/filepath"
@@ -29,6 +30,39 @@ func BenchmarkParse(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		context.compileAll()
+	}
+}
+
+// TestHighConcurrency runs the same test 100 times in parallel to detect race conditions
+// This test specifically targets URL resolution issues that occur under high concurrency
+func TestHighConcurrency(t *testing.T) {
+	const numConcurrent = 100
+
+	// Test a representative sample of files that import remote profiles
+	testFiles := []struct {
+		url    string
+		inputs map[string]any
+	}{
+		{"2.0/unicode.yaml", nil},
+		{"2.0/descriptions.yaml", nil},
+		{"2.0/functions.yaml", nil},
+		{"2.0/inputs-and-outputs.yaml", map[string]any{"ram": "1 GiB"}},
+	}
+
+	for _, tf := range testFiles {
+		tf := tf // capture range variable
+		t.Run(tf.url, func(t *testing.T) {
+			// Run the same file 100 times in parallel
+			for i := 0; i < numConcurrent; i++ {
+				i := i // capture loop variable
+				t.Run(fmt.Sprintf("run-%d", i), func(t *testing.T) {
+					t.Parallel()
+					context := NewContext(t)
+					defer context.urlContext.Release()
+					context.compile_(t, tf.url, tf.inputs)
+				})
+			}
+		})
 	}
 }
 

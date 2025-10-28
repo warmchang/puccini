@@ -107,9 +107,12 @@ func (self *Import) NewImportSpec(unit *File) (*parsing.ImportSpec, bool) {
 	var bases []exturl.URL
 	var urlContext *exturl.Context
 
+	// Protect URL context creation with mutex to avoid race conditions
+	urlCreationMutex.Lock()
 	if repository != nil {
 		repositoryUrl := repository.GetURL()
 		if repositoryUrl == nil {
+			urlCreationMutex.Unlock()
 			self.Context.ReportRepositoryInaccessible(repository.Name)
 			return nil, false
 		}
@@ -123,6 +126,7 @@ func (self *Import) NewImportSpec(unit *File) (*parsing.ImportSpec, bool) {
 	}
 
 	bases = append(bases, self.Context.Bases...)
+	urlCreationMutex.Unlock()
 
 	// Use cached URL creation with request deduplication to handle network issues
 	url, err := cachedURLCreation(urlContext, *self.URL, bases)
@@ -234,10 +238,13 @@ func (self *Import) newProfileImportSpec(profileName string) (*parsing.ImportSpe
 	profileInternalURL := "internal:/profiles/" + profileRelativePath
 
 	// Use the same URL context as regular imports for proper URL resolution
+	// Protect URL context creation with mutex to avoid race conditions
+	urlCreationMutex.Lock()
 	base := self.Context.URL.Base()
 	urlContext := base.Context()
 	bases := []exturl.URL{base}
 	bases = append(bases, self.Context.Bases...)
+	urlCreationMutex.Unlock()
 
 	// Create URL using the internal URL path with caching and request deduplication
 	profileURL, err := cachedURLCreation(urlContext, profileInternalURL, bases)
