@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/tliron/exturl"
@@ -63,6 +64,74 @@ func TestHighConcurrency(t *testing.T) {
 				})
 			}
 		})
+	}
+}
+
+func TestJavaScriptErrors(t *testing.T) {
+	context := NewContext(t)
+	defer context.urlContext.Release()
+
+	context.compileFailure("javascript/err-infinite-loop.yaml", nil)
+	context.compileFailure("javascript/err-infinite-loop-v2.yaml", nil)
+}
+
+func (self *Context) compileFailure(url string, inputs map[string]any) {
+	if t, ok := self.tb.(*testing.T); ok {
+		t.Run(url, func(t_ *testing.T) {
+			t_.Parallel()
+			self.compileFailure_(t_, url, inputs)
+		})
+	} else {
+		self.compileFailure_(self.tb, url, inputs)
+	}
+}
+
+func (self *Context) compileFailure_(t testing.TB, url string, inputs map[string]any) {
+	var normalServiceTemplate *normal.ServiceTemplate
+	var clout *cloutpkg.Clout
+	var err error
+
+	url_ := self.urlContext.NewFileURL(path.Join(filepath.ToSlash(self.root), "examples", url))
+
+	parserContext := self.parser.NewContext()
+	parserContext.URL = url_
+	parserContext.Inputs = inputs
+	if normalServiceTemplate, err = parserContext.Parse(contextpkg.TODO()); err != nil {
+		return
+	}
+
+	problems := parserContext.GetProblems()
+	if clout, err = normalServiceTemplate.Compile(); err != nil {
+		return
+	}
+
+	execContext := js.ExecContext{
+		Clout:      clout,
+		Problems:   problems,
+		URLContext: self.urlContext,
+		History:    true,
+		Format:     "yaml",
+		Pretty:     true,
+	}
+
+	execContext.Resolve()
+	execContext.Coerce()
+
+	if problems.Empty() {
+		t.Errorf("expected problems for %s", url)
+	} else if url == "javascript/err-infinite-loop.yaml" {
+		// Verify we got the specific error message
+		found := false
+		expected := "failed because I am a string, not an error object"
+		for _, problem := range problems.Problems {
+			if strings.Contains(problem.Message, expected) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("did not find expected error message in problems: %s", problems.ToString(true))
+		}
 	}
 }
 

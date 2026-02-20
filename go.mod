@@ -1,6 +1,6 @@
 module github.com/tliron/go-puccini
 
-go 1.25.1
+go 1.26.0
 
 require (
 	github.com/dop251/goja v0.0.0-20250630131328-58d95d85e994
@@ -9,7 +9,7 @@ require (
 	github.com/klauspost/pgzip v1.2.6
 	github.com/segmentio/ksuid v1.0.4
 	github.com/spf13/cobra v1.10.1
-	github.com/tliron/commonjs-goja v0.2.6
+	github.com/tliron/commonjs-goja v0.2.7
 	github.com/tliron/commonlog v0.2.21
 	github.com/tliron/exturl v0.4.6
 	github.com/tliron/go-ard v0.2.19

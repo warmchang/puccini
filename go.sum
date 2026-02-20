@@ -146,8 +146,8 @@ github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81P
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.10.0 h1:Xv5erBjTwe/5IxqUQTdXv5kgmIvbHo3QQyRwhJsOfJA=
 github.com/stretchr/testify v1.10.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
-github.com/tliron/commonjs-goja v0.2.6 h1:zVEjohhAa5gm/wyoCTdWz7jm5woc9fpeUBpyywIwemY=
-github.com/tliron/commonjs-goja v0.2.6/go.mod h1:NSt/u6YP4wdBlcW5BbF1q1h3LjXUV9wPdCm9b3qXPSA=
+github.com/tliron/commonjs-goja v0.2.7 h1:6kQpda4UjwEPTVYnrhgPFPvwP3udPMjcGxAQ/9FCoYU=
+github.com/tliron/commonjs-goja v0.2.7/go.mod h1:jTaxV9IgDvDb4EsBU6c6ty9RMSJzOkC5+bXULhjPnVM=
 github.com/tliron/commonlog v0.2.21 h1:V1v+6opmzuOqDxxnxxM5RWtlHZmqZlDxkKeZGs6DpPg=
 github.com/tliron/commonlog v0.2.21/go.mod h1:W6XVoS/zo7mHXv2Kz8HKnBq+U34dFysJ2KUh2Aboibw=
 github.com/tliron/exturl v0.4.6 h1:Wg53VbtvmTgm/sYO/Sos8oH6LA+CL7QDJM9Q6AWKFZ8=
