@@ -1,4 +1,4 @@
-**Notice: This repository is in maintenance mode. Development has moved to the Rust language and is proceeding in the [main repository](https://github.com/tliron/puccini).**
+**Notice: This repository is in maintenance mode. Development has moved to the Rust language and is proceeding in the [main repository](https://codeberg.org/tliron/puccini).**
 
 Puccini
 =======
@@ -23,7 +23,7 @@ Let's dive in!
 Note that Puccini is intentionally *not* an orchestrator. This is a "BYOO" kind of establishment
 ("Bring Your Own Orchestrator"). Available orchestration integrations:
 
-* [Khutulun](https://khutulun.puccini.cloud/) is an extensible TOSCA-native orchestrator
+* [Khutulun](https://khutulun.org/) is an extensible TOSCA-native orchestrator
 * [Kubernetes](https://kubernetes.io/): [Turandot](https://turandot.puccini.cloud/) packages Puccini
   as a Kubernetes operator and includes TOSCA types generated directly from the Kubernetes API
 * [Ansible](https://www.ansible.com/): Puccini is [packaged for Ansible Galaxy](wrappers/ansible/)
