@@ -4,10 +4,10 @@ set -e
 HERE=$(dirname "$(readlink -f "$0")")
 
 function c () {
-	curl "http://localhost:7474/db/data/transaction/commit" \
+	curl "http://localhost:7474/db/neo4j/tx/commit" \
 		--silent \
 		--request POST \
-		--user "neo4j:admin" \
+		--user "neo4j:your_password" \
 		--header 'Accept: application/json; charset=UTF-8' \
 		--header 'Content-Type: application/json' \
 		--header 'X-Stream: true' \
@@ -16,7 +16,7 @@ function c () {
 
 mkdir --parents "$HERE/data/"
 
-puccini-tosca compile "$HERE/../tosca/requirements-and-capabilities.yaml" | \
+puccini-tosca compile "$HERE/../2.0/requirements-and-capabilities.yaml" | \
 puccini-clout scriptlet exec "$HERE/neo4j.js" \
 	> "$HERE/data/tosca.json"
 

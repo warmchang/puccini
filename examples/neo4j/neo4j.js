@@ -24,7 +24,7 @@ for (let vertexId in clout.vertexes) {
 
 function createEdge(id, edge) {
 	if (tosca.isTosca(edge, 'Relationship')) 
-		createRelationship(id, edge.targetID, edge.properties);
+		createRelationship(id, edge.targetId, edge.properties);
 }
 
 function addToscaProperties(entity, properties) {
@@ -91,12 +91,12 @@ function backtick(v) {
 }
 
 function addStatementf() {
-	addStatement(puccini.sprintf.apply(null, arguments));
+	addStatement(util.sprintf.apply(null, arguments));
 }
 
 function addStatement(statement) {
 	statements.push({statement: statement})
 }
 
-puccini.format = 'json';
-puccini.write({statements: statements});
+transcribe.format = 'json';
+transcribe.output({statements: statements});
