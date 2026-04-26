@@ -15,3 +15,24 @@ Another approach could be to use the `neo4j-admin` tool to
 
 You can visualize your results using Bolt, Neo4j's web GUI, at 
 [`http://localhost:7474/browser/`](http://localhost:7474/browser/).
+
+
+## Tested on Neo4j in docker with the following steps:
+
+1. Build puccini ```bash scripts/build```
+    - If mac is used readlink is not available but coreutils from brew can be download end used. 
+    ```brew install coreutils```
+    - Creting an alias: ```alias readlink=greadlink```
+
+2. Run Neo4j on docker: 
+``` 
+docker run \
+  --name neo4j \
+  -p 7474:7474 -p 7687:7687 \
+  -d \
+  -e NEO4J_AUTH=neo4j/myStrongPassword \
+  neo4j:latest
+```
+
+3. Run the export script
+```bash export```
